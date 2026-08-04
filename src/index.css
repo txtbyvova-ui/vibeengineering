@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --accent: #ff4f00;
+  }
+
+  @keyframes gridShift {
+    0% {
+      background-position: 0 0, 0 0;
+    }
+    100% {
+      background-position: 4rem 4rem, 4rem 4rem;
+    }
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-textMain font-sans;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: #0d0d0d;
+  }
+
+  /* Hidden scrollbar */
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+@layer components {
+  /* Fixed animated background grid */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(136, 136, 136, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(136, 136, 136, 0.03) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    animation: gridShift 20s linear infinite;
+  }
+
+  /* Hollow outline text that fills with accent on hover */
+  .text-hollow {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--accent);
+    transition: color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .text-hollow:hover {
+    color: var(--accent);
+  }
+
+  .text-hollow-white {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(244, 244, 240, 0.35);
+    transition: color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      -webkit-text-stroke-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .text-hollow-white:hover {
+    color: var(--accent);
+    -webkit-text-stroke-color: var(--accent);
+  }
+
+  .hairline {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .mono-label {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-textMuted;
+  }
+
+  .btn-fill {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-fill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #f4f4f0;
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: -1;
+  }
+  .btn-fill:hover {
+    color: #0d0d0d;
+  }
+  .btn-fill:hover::before {
+    transform: scaleY(1);
+  }
+}
