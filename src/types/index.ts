@@ -26,6 +26,14 @@ export interface Client {
   name: string;
 }
 
+/** Метрика Hero. Существующий Metric — кортеж строк, для count-up нужен number. */
+export interface HeroMetric {
+  value: number;
+  /** Статичный хвост: «+», «M+». Не участвует в счёте. */
+  suffix: string;
+  label: string;
+}
+
 export interface ContactLink {
   label: string;
   handle: string;
