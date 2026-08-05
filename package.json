@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "og": "node scripts/generate-og.mjs",
-    "prebuild": "node scripts/generate-og.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "media": "node scripts/optimize-media.mjs",
+    "prebuild": "node scripts/generate-og.mjs && node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
