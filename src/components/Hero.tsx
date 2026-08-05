@@ -17,6 +17,9 @@ const lines = hero.headline.reduce<HeadlinePart[][]>((acc, part) => {
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
+  // Бокс h1 — единственный замер, из которого считаются высота полосы фермы
+  // и стопы её маски. Процент здесь сломался бы: h1 прижат mt-auto к низу.
+  const headlineRef = useRef<HTMLHeadingElement>(null);
   let partIndex = 0;
 
   return (
@@ -29,7 +32,7 @@ export default function Hero() {
       // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
       className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
     >
-      <StructuralGridCanvas hostRef={heroRef} className="z-0" />
+      <StructuralGridCanvas hostRef={heroRef} headlineRef={headlineRef} className="z-0" />
 
       {/* Micro-label */}
       <motion.div
@@ -48,7 +51,10 @@ export default function Hero() {
       <div className="relative z-10 mt-auto">
         {/* Ниже md заголовок переносится по словам, и при leading < 1 маски
             RevealText срезают глифы соседних строк — держим здесь запас. */}
-        <h1 className="font-display text-[11vw] font-semibold leading-[1.08] tracking-display md:text-[7.4vw] md:leading-[0.92]">
+        <h1
+          ref={headlineRef}
+          className="font-display text-[11vw] font-semibold leading-[1.08] tracking-display md:text-[7.4vw] md:leading-[0.92]"
+        >
           {lines.map((line, li) => (
             <span key={li} className="block">
               {line.map((part) => {
