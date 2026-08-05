@@ -7,6 +7,7 @@ export const teamHeading: SectionHeading = {
 
 export const team: TeamMember[] = [
   {
+    slug: "vladimir",
     name: "Владимир Егоров",
     role: "Креативный продюсер",
     stats: [
@@ -21,6 +22,7 @@ export const team: TeamMember[] = [
       "Креативная стратегия · Telegram-боты · Тексты под конверсию · Виральные механики",
   },
   {
+    slug: "roman",
     name: "Роман Петров",
     role: "Технический директор",
     stats: [
