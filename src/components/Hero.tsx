@@ -1,20 +1,32 @@
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import RevealText from "@/components/ui/RevealText";
+import HeroMetrics from "@/components/ui/HeroMetrics";
+import StructuralGridCanvas from "@/components/ui/StructuralGridCanvas";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function Hero() {
+  const heroRef = useRef<HTMLElement>(null);
+
   return (
     <section
       id="top"
-      className="relative flex min-h-svh flex-col justify-between px-5 pb-10 pt-32 md:px-10 md:pt-40"
+      ref={heroRef}
+      // bg-bg — не косметика: собственный фон секции закрывает .bg-grid
+      //   (position: fixed, z-index: -1) в пределах Hero, чтобы две сетки
+      //   не накладывались друг на друга.
+      // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
+      className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
     >
+      <StructuralGridCanvas hostRef={heroRef} className="z-0" />
+
       {/* Micro-label */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: EASE }}
-        className="flex items-center gap-3"
+        className="relative z-10 flex items-center gap-3"
       >
         <span className="h-2 w-2 shrink-0 animate-pulseDot rounded-full bg-accent" />
         <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
@@ -23,7 +35,7 @@ export default function Hero() {
       </motion.div>
 
       {/* H1 */}
-      <div className="mt-auto">
+      <div className="relative z-10 mt-auto">
         <h1 className="font-display text-[13vw] font-semibold leading-[0.92] tracking-display md:text-[9vw]">
           <span className="block">
             <RevealText delay={0.05}>Мы строили</RevealText>{" "}
@@ -40,6 +52,8 @@ export default function Hero() {
             <RevealText delay={0.43}>веб.</RevealText>
           </span>
         </h1>
+
+        <HeroMetrics className="mt-10" />
 
         <div className="mt-10 grid grid-cols-1 gap-8 border-t border-hairline pt-8 md:grid-cols-[1.4fr_1fr] md:items-end">
           <motion.p
@@ -61,7 +75,7 @@ export default function Hero() {
           >
             <a
               href="#contact"
-              className="btn-fill inline-flex items-center gap-3 bg-accent px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-bg"
+              className="btn-fill inline-flex items-center gap-3 bg-accent px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               Запустить протокол
               <span aria-hidden>→</span>

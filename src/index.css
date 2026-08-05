@@ -114,3 +114,24 @@
     transform: scaleY(1);
   }
 }
+
+@layer utilities {
+  /* Блок обязан лежать в utilities: слой Tailwind-утилит идёт после
+     пользовательских правил, и голое правило перебили бы .animate-marquee
+     и .animate-pulseDot.
+     Canvas сюда НЕ попадает — у него своя JS-проверка в useStructuralGrid. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
