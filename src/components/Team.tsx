@@ -9,13 +9,7 @@ export default function Team() {
     <section id="team" className="px-5 py-24 md:px-10 md:py-40">
       <div className="mb-12 flex items-end justify-between border-b border-hairline pb-6">
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
-          <RevealText>
-            <span className="text-hollow">Инженер</span>
-          </RevealText>{" "}
-          <span className="text-accent">×</span>{" "}
-          <RevealText delay={0.1}>
-            <span className="text-hollow">Продюсер</span>
-          </RevealText>
+          <RevealText>Кто строит</RevealText>
         </h2>
         <span className="mono-label">◆ Founders</span>
       </div>

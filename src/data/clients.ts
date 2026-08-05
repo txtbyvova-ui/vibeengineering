@@ -8,5 +8,5 @@ export const clients: Client[] = [
   { name: "SKOLKOVO" },
   { name: "VK FEST" },
   { name: "ВДНХ" },
-  { name: "M.ВИДЕО" },
+  { name: "М.Видео" },
 ];

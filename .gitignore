@@ -4,3 +4,7 @@ dist-ssr
 *.local
 .DS_Store
 .vite
+
+# OG-карточка генерируется сборкой (scripts/generate-og.mjs).
+# В репозитории держим код, а не бинарный ассет.
+public/og.png

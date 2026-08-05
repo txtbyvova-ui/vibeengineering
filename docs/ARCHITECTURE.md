@@ -28,7 +28,8 @@ remote `github.com/txtbyvova-ui/vibeengineering`.
 | UI | React 18 + TypeScript 5.5 (`strict`) | 8 секций-компонентов, без роутера и state-менеджера |
 | Стили | Tailwind CSS 3.4 + PostCSS | дизайн-токены в конфиге, примитивы в `@layer components` |
 | Анимация | Framer Motion 11 | только entry/scroll-анимации, интерактивной анимации нет |
-| Шрифты | Clash Display (Fontshare), Space Grotesk + JetBrains Mono (Google Fonts) | подключены `<link>` из `index.html` |
+| Шрифты | Clash Display (Fontshare), Space Grotesk + JetBrains Mono (Google Fonts) | подключены `<link>` из `index.html`. ⚠️ см. §6.4 — кириллицу из них умеет только JetBrains Mono |
+| OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится |
 
 Runtime-зависимостей ровно три: `react`, `react-dom`, `framer-motion`.
 Ни роутера, ни fetch-слоя, ни аналитики.
@@ -45,7 +46,12 @@ vibeengineering/
 ├── package.json                # dev / build / preview / typecheck / lint*
 ├── docs/
 │   ├── ARCHITECTURE.md         # этот файл
-│   └── BACKLOG.md              # приоритизированные технические долги
+│   ├── BACKLOG.md              # приоритизированные технические долги
+│   └── SPEC-hero-truss.md      # спецификация переделки Hero (не реализовано)
+├── scripts/
+│   └── generate-og.mjs         # сборка OG-карточки (Satori + resvg), хук prebuild
+├── public/                     # копируется Vite в dist/ как есть
+│   └── og.png                  # ГЕНЕРИРУЕТСЯ, в git не коммитится
 ├── tools/
 │   └── rag.config.json         # конфиг локального RAG-индекса
 └── src/
@@ -83,16 +89,24 @@ npm install
 |---------|-----------|----------------------|
 | `npm run dev` | Vite dev-сервер, http://localhost:5173 | — |
 | `npm run typecheck` | `tsc --noEmit` | ✅ без ошибок |
-| `npm run build` | `tsc --noEmit && vite build` | ✅ 400 модулей, ~5.3 с |
+| `npm run og` | генерирует `public/og.png` | ✅ 1200×630, 33.5 kB |
+| `npm run build` | `prebuild` (og) → `tsc --noEmit && vite build` | ✅ 400 модулей, ~4 с |
 | `npm run preview` | превью прод-сборки | — |
 | `npm run lint` | `eslint .` | ❌ eslint не установлен и не сконфигурирован |
+
+`prebuild` запускается npm автоматически перед `build`, поэтому `og.png` всегда
+свежий и попадает в `dist/`. Скрипт тянет TTF шрифтов с тех же CDN, что и сайт,
+и кэширует их в `node_modules/.cache/og-fonts` — **первая** сборка на чистой машине
+требует сети, последующие нет. При недоступности CDN сборка падает громко:
+битый `og:image` хуже упавшего билда.
 
 Прод-бандл (замер 2026-08-05):
 
 ```
-dist/index.html                   1.79 kB │ gzip:  0.89 kB
+dist/index.html                   2.91 kB │ gzip:  1.14 kB
 dist/assets/index-*.css          14.13 kB │ gzip:  3.65 kB
-dist/assets/index-*.js          270.44 kB │ gzip: 88.07 kB
+dist/assets/index-*.js          270.24 kB │ gzip: 88.07 kB
+dist/og.png                      33.5  kB
 ```
 
 88 КБ gzip JS для статического лендинга — это почти целиком React + Framer Motion.
@@ -163,6 +177,27 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 Плюс глобально: скрытый скроллбар, `scroll-behavior: smooth`, кастомный `::selection`.
 
 ### 6.3 Повторяющиеся паттерны разметки
+
+### 6.4 ⚠️ Кириллица: работает только JetBrains Mono
+
+Замерено 2026-08-05, подтверждено и в браузере, и разбором TTF:
+
+| Шрифт | Латиница | Кириллица |
+|---|---|---|
+| Clash Display | ✅ | ❌ 0 кодпоинтов U+0400–U+04FF |
+| Space Grotesk | ✅ | ❌ сабсета `cyrillic` нет в css2 |
+| JetBrains Mono | ✅ | ✅ 98 кодпоинтов, включая `◆` |
+
+**Весь русский текст сайта рендерится браузерным фоллбэком `sans-serif`**, а не
+выбранной типографикой. Реальные гарнитуры получают только латинские вкрапления.
+Это не косметика, а вопрос к бренду — подробности и варианты решения
+в [BACKLOG.md §0](BACKLOG.md).
+
+Практическое следствие для любого нового кода: **если текст русский, Clash Display
+и Space Grotesk на него не подействуют.** OG-карточка это уже учитывает —
+латинский заголовок набран Clash Display, русский текст и `◆` — JetBrains Mono.
+
+### 6.5 Повторяющиеся паттерны разметки
 
 Три секции (`Cases`, `Process`, `Team`) используют один и тот же заголовок:
 `flex items-end justify-between border-b border-hairline pb-6` + `h2` слева
