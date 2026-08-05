@@ -32,8 +32,12 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
    * Когда ленту последний раз двигали кнопкой. Нужен, чтобы подобрать фокус
    * ровно за той кнопкой, которая сама себя погасила, и не трогать его
    * ни на первом рендере, ни при позднем `resize`.
+   *
+   * Начальное значение обязано быть −∞, а не 0: `performance.now()` в первые
+   * полторы секунды жизни страницы сам меньше окна, и с нулём эффект считал
+   * окно открытым и уводил фокус на стрелку прямо при загрузке.
    */
-  const arrowAt = useRef(0);
+  const arrowAt = useRef(Number.NEGATIVE_INFINITY);
   const [progress, setProgress] = useState(0);
   const [thumb, setThumb] = useState(1);
   const [atStart, setAtStart] = useState(true);
