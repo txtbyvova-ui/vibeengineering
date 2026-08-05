@@ -4,8 +4,13 @@ import { TBD, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
-/** Карточка занимает 85vw ниже sm — так виден край следующей и лента читается как лента. */
-const COVER_SIZES = "(min-width: 768px) 26rem, 85vw";
+/**
+ * Ширина слота по брейкпоинтам ленты: 85vw ниже sm (виден край следующей
+ * карточки — лента читается как лента), 24rem на sm, 26rem от md.
+ * Пропуск среднего диапазона стоил бы завышенного кандидата из srcSet
+ * на 640–767 px, причём у обложек, которые грузятся `eager`.
+ */
+const COVER_SIZES = "(min-width: 768px) 26rem, (min-width: 640px) 24rem, 85vw";
 
 interface CaseCardProps {
   study: CaseStudy;

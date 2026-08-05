@@ -28,8 +28,12 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
   const railRef = useRef<HTMLUListElement>(null);
   const prevRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
-  /** Кто последним двигал ленту — чтобы не забирать фокус на первом рендере. */
-  const arrowDriven = useRef(false);
+  /**
+   * Когда ленту последний раз двигали кнопкой. Нужен, чтобы подобрать фокус
+   * ровно за той кнопкой, которая сама себя погасила, и не трогать его
+   * ни на первом рендере, ни при позднем `resize`.
+   */
+  const arrowAt = useRef(0);
   const [progress, setProgress] = useState(0);
   const [thumb, setThumb] = useState(1);
   const [atStart, setAtStart] = useState(true);
@@ -88,11 +92,15 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
    * Долистав ленту кнопкой до края, пользователь нажимает элемент, который тут же
    * становится `disabled`, — браузер снимает с него фокус и отдаёт `<body>`.
    * Следующий Tab после этого начинает обход с самого верха страницы. Переводим
-   * фокус на соседнюю стрелку, но только если ленту вели именно кнопками:
-   * иначе эффект утащил бы фокус к кейсам сразу после загрузки.
+   * фокус на соседнюю стрелку.
+   *
+   * Окно в полторы секунды после нажатия обязательно: без него эффект забирал бы
+   * фокус на первом же рендере (`atStart` истинно сразу) и позже — на любом
+   * `resize`, меняющем границы ленты. Плавная прокрутка на один шаг укладывается
+   * в окно с запасом.
    */
   useEffect(() => {
-    if (!arrowDriven.current) return;
+    if (performance.now() - arrowAt.current > 1500) return;
     if (document.activeElement !== document.body) return;
     if (atEnd && !atStart) prevRef.current?.focus();
     else if (atStart && !atEnd) nextRef.current?.focus();
@@ -100,7 +108,7 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
 
   const scrollByArrow = useCallback(
     (direction: 1 | -1) => {
-      arrowDriven.current = true;
+      arrowAt.current = performance.now();
       scrollByCard(direction);
     },
     [scrollByCard]

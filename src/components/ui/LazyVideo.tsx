@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { RefObject } from "react";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
 import type { MediaVideo } from "@/types";
 
@@ -7,6 +8,13 @@ const BASE = "/media/";
 interface LazyVideoProps {
   video: MediaVideo;
   className?: string;
+  /**
+   * Скролл-контейнер, внутри которого лежит ролик, если он есть.
+   * Без него у наблюдателя root — вьюпорт, и `rootMargin` расширяет вьюпорт,
+   * а не видимую область контейнера: запас в 200 px просто не работает,
+   * ролик начинает грузиться ровно в момент появления, а не заранее.
+   */
+  scrollRootRef?: RefObject<HTMLElement | null>;
 }
 
 /**
@@ -22,7 +30,11 @@ interface LazyVideoProps {
  * в петле, то есть без механизма паузы это прямое нарушение WCAG 2.2.2.
  * Селектор ловушки фокуса в CaseModal на `video[controls]` уже рассчитан.
  */
-export default function LazyVideo({ video, className = "" }: LazyVideoProps) {
+export default function LazyVideo({
+  video,
+  className = "",
+  scrollRootRef,
+}: LazyVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
   const reduce = usePrefersReducedMotion();
@@ -41,11 +53,11 @@ export default function LazyVideo({ video, className = "" }: LazyVideoProps) {
           io.disconnect();
         }
       },
-      { rootMargin: "200px 0px" }
+      { root: scrollRootRef?.current ?? null, rootMargin: "200px 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [scrollRootRef]);
 
   // React вставляет <source> в уже смонтированный <video>; без load() браузер
   // о новом источнике не узнает.

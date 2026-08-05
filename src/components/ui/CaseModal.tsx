@@ -106,12 +106,22 @@ export default function CaseModal({
       }
       // У плеера ролика стрелки — перемотка. Перехватывать их под ним нельзя:
       // пользователь метит в кадр, а получает соседний кейс.
-      const inMedia = event.target instanceof HTMLMediaElement;
-      if (event.key === "ArrowLeft" && hasPrev && !inMedia) {
+      // Модификаторы тоже не наши: Alt+← у браузера — «назад» по истории,
+      // а без preventDefault срабатывало бы и переключение кейса, и уход
+      // со страницы вместе с ним.
+      const plainArrow =
+        !(event.target instanceof HTMLMediaElement) &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey;
+      if (event.key === "ArrowLeft" && hasPrev && plainArrow) {
+        event.preventDefault();
         onPrev();
         return;
       }
-      if (event.key === "ArrowRight" && hasNext && !inMedia) {
+      if (event.key === "ArrowRight" && hasNext && plainArrow) {
+        event.preventDefault();
         onNext();
         return;
       }
@@ -123,11 +133,17 @@ export default function CaseModal({
       const last = nodes[nodes.length - 1];
       const active = document.activeElement;
 
-      // Обе ветки обязаны ловить «фокус вне диалога» одинаково: кнопка стрелки,
-      // ставшая disabled после переключения кейса, сбрасывает фокус в <body>,
-      // и оттуда штатный Tab уходил за оверлей, к невидимому контенту.
-      const outside = !dialogRef.current?.contains(active);
-      if (event.shiftKey && (active === first || outside)) {
+      // Три положения, из которых штатный Tab уводил фокус за оверлей:
+      //   • фокус в <body> — так его роняет кнопка стрелки, ставшая disabled
+      //     после переключения кейса (браузер снимает фокус по спецификации);
+      //   • фокус на самой оболочке диалога (tabIndex=-1) — это состояние сразу
+      //     после открытия, и Shift+Tab из него уходил назад по документу,
+      //     а портал лежит последним ребёнком body, то есть на почту в футере;
+      //   • фокус на краю списка — классический случай.
+      const container = dialogRef.current;
+      const outside = !container?.contains(active);
+      const atStart = active === first || active === container;
+      if (event.shiftKey && (atStart || outside)) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && (active === last || outside)) {
@@ -282,6 +298,7 @@ export default function CaseModal({
                 {media.video && (
                   <LazyVideo
                     video={media.video}
+                    scrollRootRef={scrollRef}
                     className="mt-8 aspect-[16/9] w-full border border-hairline object-cover"
                   />
                 )}
