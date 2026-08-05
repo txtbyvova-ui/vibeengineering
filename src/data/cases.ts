@@ -13,7 +13,7 @@ export const cases: CaseStudy[] = [
       "Спроектировали 400-кг smart-портал и запустили Telegram-воронку лидогенерации за 5 дней до Нового года — когда все цеха Москвы стояли. Python/aiogram, IoT-управление светом, деплой без даунтайма.",
   },
   {
-    title: "M.Видео: IT Tinder",
+    title: "М.Видео: IT Tinder",
     tags: ["Growth Hacking", "HR Tech"],
     metrics: [
       ["650K", "охват"],
