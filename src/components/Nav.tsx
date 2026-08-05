@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-
-const LINKS = [
-  { label: "work", href: "#work" },
-  { label: "process", href: "#process" },
-  { label: "team", href: "#team" },
-  { label: "contact", href: "#contact" },
-] as const;
+import { navBrand, navCta, navLinks } from "@/data/nav";
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -25,18 +19,19 @@ export default function Nav() {
         }`}
       >
         <a
-          href="#top"
+          href={navBrand.href}
           className="font-display text-2xl font-semibold leading-none tracking-tightest text-textMain"
-          aria-label="Vibe Engineering — на главную"
+          aria-label={navBrand.ariaLabel}
         >
-          VE
+          {navBrand.mark}
         </a>
 
         <div className="hidden items-center gap-8 md:flex">
-          {LINKS.map((link) => (
+          {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
+              lang="en"
               className="font-mono text-xs uppercase tracking-[0.16em] text-textMain transition-opacity duration-300 hover:opacity-50"
             >
               {link.label}
@@ -45,12 +40,12 @@ export default function Nav() {
         </div>
 
         <a
-          href="https://t.me/vibeengineering"
+          href={navCta.href}
           target="_blank"
           rel="noopener noreferrer"
           className="border border-textMain px-4 py-2 font-mono text-xs uppercase tracking-[0.16em] text-textMain transition-colors duration-300 hover:bg-textMain hover:text-bg"
         >
-          Telegram ↗
+          {navCta.label}
         </a>
       </nav>
     </header>

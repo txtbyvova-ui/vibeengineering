@@ -1,36 +1,13 @@
 import { motion } from "framer-motion";
 import RevealText from "@/components/ui/RevealText";
+import { uspHeading, uspPoints } from "@/data/usp";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-
-interface UspPoint {
-  label: string;
-  title: string;
-  body: string;
-}
-
-const points: UspPoint[] = [
-  {
-    label: "01",
-    title: "Архитектура",
-    body: "BIM-мышление в каждом компоненте. Код держит нагрузку как мост.",
-  },
-  {
-    label: "02",
-    title: "Конверсия",
-    body: "30M+ охватов опыта зашито в каждый заголовок и воронку.",
-  },
-  {
-    label: "03",
-    title: "Скорость",
-    body: "120 часов на phygital-систему. Ваш MVP — за 2–4 недели.",
-  },
-];
 
 export default function USP() {
   return (
     <section className="px-5 py-24 md:px-10 md:py-40">
-      <p className="mono-label mb-8">◆ Почему мы</p>
+      <p className="mono-label mb-8">{uspHeading.eyebrow}</p>
 
       <h2 className="font-display text-[15vw] font-semibold leading-[0.9] tracking-display md:text-[10vw]">
         <RevealText>
@@ -42,8 +19,10 @@ export default function USP() {
         </RevealText>
       </h2>
 
+      <p className="mt-6 max-w-xl text-textMuted md:text-lg">{uspHeading.subtitle}</p>
+
       <div className="mt-16 grid grid-cols-1 border-t border-hairline md:grid-cols-3">
-        {points.map((point, i) => (
+        {uspPoints.map((point, i) => (
           <motion.div
             key={point.label}
             initial={{ opacity: 0, y: 32 }}

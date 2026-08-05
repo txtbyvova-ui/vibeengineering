@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { team } from "@/data/team";
+import { team, teamHeading } from "@/data/team";
 import RevealText from "@/components/ui/RevealText";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -9,9 +9,11 @@ export default function Team() {
     <section id="team" className="px-5 py-24 md:px-10 md:py-40">
       <div className="mb-12 flex items-end justify-between border-b border-hairline pb-6">
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
-          <RevealText>Кто строит</RevealText>
+          <RevealText>{teamHeading.title}</RevealText>
         </h2>
-        <span className="mono-label">◆ Founders</span>
+        <span lang="en" className="mono-label">
+          {teamHeading.eyebrow}
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2">
@@ -22,7 +24,7 @@ export default function Team() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-10% 0px" }}
             transition={{ duration: 0.8, delay: i * 0.1, ease: EASE }}
-            className="border-b border-hairline py-10 md:px-10 md:py-14 md:first:border-r md:first:pl-0 md:last:pr-0"
+            className="border-b border-hairline py-10 md:px-10 md:py-14 md:odd:border-r md:odd:pl-0 md:even:pr-0"
           >
             <span className="font-mono text-xs uppercase tracking-[0.16em] text-accent">
               {member.role}

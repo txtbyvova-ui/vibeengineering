@@ -8,3 +8,7 @@ dist-ssr
 # OG-карточка генерируется сборкой (scripts/generate-og.mjs).
 # В репозитории держим код, а не бинарный ассет.
 public/og.png
+
+# Исходный медиа-архив (оригиналы от владельца). В прод едут только
+# оптимизированные производные из public/media — см. scripts/optimize-media.mjs.
+site media/

@@ -1,10 +1,24 @@
 export type Metric = readonly [value: string, label: string];
 
+/** Внешняя или якорная ссылка с подписью. */
+export interface Link {
+  label: string;
+  href: string;
+}
+
 export interface CaseStudy {
+  /** Латинский идентификатор: ключ React и префикс путей к медиа. */
+  slug: string;
   title: string;
   tags: string[];
+  problem: string;
+  solution: string;
+  result: string;
   metrics: Metric[];
-  description: string;
+  /** Строка клиентов под метриками — есть не у каждого кейса. */
+  clients?: string;
+  /** «Открыть сайт →» для кейсов с живым продуктом. */
+  link?: Link;
 }
 
 export interface TeamMember {
@@ -38,4 +52,11 @@ export interface ContactLink {
   label: string;
   handle: string;
   href: string;
+}
+
+/** Шапка секции: ◆-надстрочник, заголовок и необязательный подзаголовок. */
+export interface SectionHeading {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
 }
