@@ -1,8 +1,9 @@
 # Архитектура — Vibe Engineering Landing
 
 Карта проекта для тех, кто (или что) заходит в репозиторий без контекста.
-Статус на 2026-08-05: один коммит `14381b2 Initial commit`, ветка `main`,
-remote `github.com/txtbyvova-ui/vibeengineering`.
+Статус на 2026-08-05: ветка `main`, remote `github.com/txtbyvova-ui/vibeengineering`.
+Последняя крупная работа — контент-релиз v2 (новый копирайт, медиа в кейсах,
+SEO-обвязка), ветка `feat/content-v2`.
 
 ---
 
@@ -17,8 +18,9 @@ remote `github.com/txtbyvova-ui/vibeengineering`.
 крупная display-типографика на весь вьюпорт, hairline-сетка вместо карточек с тенями,
 контурный (hollow) текст, промышленная мono-разметка подписей.
 
-**Ценообразования на странице нет намеренно** — «Цену обсудим в личке»
-([Process.tsx:47](../src/components/Process.tsx:47)). Это продуктовое решение, не упущение.
+**Ценообразования на странице нет намеренно.** Вместо прайса — блок «Смета до строки
+за 2 часа» ([data/process.ts](../src/data/process.ts), `estimate`): обещание расчёта,
+а не цифра. Это продуктовое решение, не упущение.
 
 ## 2. Стек
 
@@ -47,34 +49,53 @@ vibeengineering/
 ├── docs/
 │   ├── ARCHITECTURE.md         # этот файл
 │   ├── BACKLOG.md              # приоритизированные технические долги
-│   └── SPEC-hero-truss.md      # спецификация переделки Hero (не реализовано)
+│   └── SPEC-hero-truss.md      # спецификация переделки Hero (реализована)
 ├── scripts/
-│   └── generate-og.mjs         # сборка OG-карточки (Satori + resvg), хук prebuild
+│   ├── generate-og.mjs         # OG-карточка (Satori + resvg), хук prebuild
+│   ├── generate-icons.mjs      # apple-touch-icon.png из favicon.svg, хук prebuild
+│   └── optimize-media.mjs      # РАЗОВЫЙ: «site media/» → public/media (ffmpeg)
 ├── public/                     # копируется Vite в dist/ как есть
-│   └── og.png                  # ГЕНЕРИРУЕТСЯ, в git не коммитится
+│   ├── favicon.svg             # исходник знака, в git
+│   ├── robots.txt              # allow-all + ссылка на sitemap
+│   ├── sitemap.xml             # единственный URL
+│   ├── media/                  # AVIF/WebP/JPEG кейсов и команды + ролик, В GIT
+│   ├── og.png                  # ГЕНЕРИРУЕТСЯ, в git не коммитится
+│   └── apple-touch-icon.png    # ГЕНЕРИРУЕТСЯ, в git не коммитится
 ├── tools/
 │   └── rag.config.json         # конфиг локального RAG-индекса
 └── src/
-    ├── main.tsx                # ReactDOM.createRoot + StrictMode
+    ├── main.tsx                # createRoot + StrictMode + MotionConfig reducedMotion="user"
     ├── App.tsx                 # композиция секций, фоновая .bg-grid
-    ├── index.css               # @layer base (сброс, ::selection) + @layer components (примитивы)
+    ├── index.css               # @layer base + components + utilities (prefers-reduced-motion)
     ├── vite-env.d.ts
-    ├── types/index.ts          # CaseStudy, TeamMember, ProcessStep, Client, ContactLink, Metric
-    ├── data/                   # контент, отделённый от разметки
-    │   ├── cases.ts            # 4 кейса
+    ├── types/index.ts          # CaseStudy, TeamMember, ProcessStep, ResponsiveImage, …
+    ├── hooks/                  # useCountUp, useStructuralGrid
+    ├── data/                   # ВЕСЬ пользовательский текст и пути к медиа
+    │   ├── hero.ts             # заголовок кусками, лид, CTA
+    │   ├── heroMetrics.ts      # 3 метрики первого экрана для count-up
+    │   ├── usp.ts              # шапка секции + 3 пункта
+    │   ├── cases.ts            # 4 кейса + мета-кейс
+    │   ├── media.ts            # интринсики, alt-тексты и пути в public/media
+    │   ├── process.ts          # 4 этапа + блок сметы + цитата
     │   ├── team.ts             # 2 основателя
-    │   ├── process.ts          # 4 шага методологии
-    │   └── clients.ts          # 8 логотипов для marquee
+    │   ├── contact.ts          # финальный оффер, ссылки, реквизиты футера
+    │   ├── clients.ts          # 7 брендов для marquee
+    │   └── nav.ts              # пункты меню, логотип, кнопка Telegram
     └── components/
         ├── Nav.tsx             # fixed + mix-blend-difference, реагирует на scrollY > 24
-        ├── Hero.tsx            # h1 + CTA, единственный h1 на странице
+        ├── Hero.tsx            # h1 + метрики + CTA, единственный h1 на странице
         ├── Marquee.tsx         # бесконечная лента клиентов (CSS-анимация, не JS)
-        ├── USP.tsx             # 3 преимущества  (данные ИНЛАЙН в компоненте)
-        ├── Cases.tsx           # сетка кейсов 2×N
-        ├── Process.tsx         # 4 шага + оффер-цитата
-        ├── Team.tsx            # 2 карточки основателей
-        ├── Contact.tsx         # ссылки, финальный оффер, <footer> (данные ИНЛАЙН)
-        └── ui/RevealText.tsx   # ЕДИНСТВЕННЫЙ переиспользуемый примитив
+        ├── USP.tsx             # 3 преимущества
+        ├── Cases.tsx           # сетка кейсов 2×N + мета-кейс
+        ├── Process.tsx         # 4 этапа + блок сметы + цитата
+        ├── Team.tsx            # 2 карточки основателей с портретами
+        ├── Contact.tsx         # оффер, ссылки, <footer> с реквизитами
+        └── ui/
+            ├── RevealText.tsx         # маска-раскрытие текста
+            ├── HeroMetrics.tsx        # строка метрик с count-up
+            ├── StructuralGridCanvas.tsx  # ферма первого экрана, Canvas 2D
+            ├── Picture.tsx            # <picture> AVIF → WebP → JPEG
+            └── LazyVideo.tsx          # видео по IntersectionObserver
 ```
 
 `*` про скрипт `lint` — см. [BACKLOG.md](BACKLOG.md), он объявлен, но нерабочий.
@@ -89,28 +110,41 @@ npm install
 |---------|-----------|----------------------|
 | `npm run dev` | Vite dev-сервер, http://localhost:5173 | — |
 | `npm run typecheck` | `tsc --noEmit` | ✅ без ошибок |
-| `npm run og` | генерирует `public/og.png` | ✅ 1200×630, 33.5 kB |
-| `npm run build` | `prebuild` (og) → `tsc --noEmit && vite build` | ✅ 400 модулей, ~4 с |
+| `npm run og` | генерирует `public/og.png` | ✅ 1200×630, 43.7 kB |
+| `npm run icons` | генерирует `public/apple-touch-icon.png` | ✅ 180×180, 2.3 kB |
+| `npm run media` | пережимает `site media/` → `public/media` | ✅ разовый, нужен ffmpeg |
+| `npm run build` | `prebuild` (og + icons) → `tsc --noEmit && vite build` | ✅ 413 модулей, ~6 с |
 | `npm run preview` | превью прод-сборки | — |
 | `npm run lint` | `eslint .` | ❌ eslint не установлен и не сконфигурирован |
 
-`prebuild` запускается npm автоматически перед `build`, поэтому `og.png` всегда
-свежий и попадает в `dist/`. Скрипт тянет TTF шрифтов с тех же CDN, что и сайт,
-и кэширует их в `node_modules/.cache/og-fonts` — **первая** сборка на чистой машине
-требует сети, последующие нет. При недоступности CDN сборка падает громко:
-битый `og:image` хуже упавшего билда.
+`prebuild` запускается npm автоматически перед `build`, поэтому `og.png`
+и `apple-touch-icon.png` всегда свежие и попадают в `dist/`. Скрипт OG тянет TTF
+шрифтов с тех же CDN, что и сайт, и кэширует их в `node_modules/.cache/og-fonts` —
+**первая** сборка на чистой машине требует сети, последующие нет. При недоступности
+CDN сборка падает громко: битый `og:image` хуже упавшего билда.
 
-Прод-бандл (замер 2026-08-05):
+`npm run media` в `build` **не** подключён: производные закоммичены, пережимать их
+на каждой сборке незачем, а ffmpeg на CI может не быть. Запускать вручную, когда
+меняется архив.
+
+Прод-бандл (замер 2026-08-05, после контент-релиза v2):
 
 ```
-dist/index.html                   2.91 kB │ gzip:  1.14 kB
-dist/assets/index-*.css          14.13 kB │ gzip:  3.65 kB
-dist/assets/index-*.js          270.24 kB │ gzip: 88.07 kB
-dist/og.png                      33.5  kB
+dist/index.html                   6.54 kB │ gzip:  2.14 kB
+dist/assets/index-*.css          16.98 kB │ gzip:  4.35 kB
+dist/assets/index-*.js          289.23 kB │ gzip: 94.99 kB
+dist/og.png                      43.7  kB
+dist/media/**                     3.0  MB  (лениво, на первый экран не попадает)
 ```
 
-88 КБ gzip JS для статического лендинга — это почти целиком React + Framer Motion.
-Ориентир при любых правках: цифра не должна расти.
+Было до релиза: `270.24 kB` JS (`88.07` gzip), `14.13 kB` CSS (`3.65` gzip),
+`2.91 kB` HTML. Рост HTML — JSON-LD, рост JS/CSS — новый контент, `Picture`
+и `LazyVideo`. 95 КБ gzip JS — это почти целиком React + Framer Motion.
+
+**Сетевой замер на прод-сборке** (1440 px, DevTools Network): первый экран —
+**0 kB медиа**, 231 kB всего; вся страница после прокрутки — 1332 kB медиа,
+из них 1246 kB это ролик М.Видео. Бюджет ТЗ (≤200 kB медиа на первый экран)
+держится с запасом: выше сгиба медиа нет вообще.
 
 ## 5. Поток данных
 
@@ -129,10 +163,10 @@ src/App.tsx          фиксированный порядок секций
 **Правило репозитория:** контент живёт в `src/data/*`, разметка — в компонентах.
 Правка текстов не должна затрагивать `.tsx`.
 
-⚠️ Правило нарушено в двух местах — данные объявлены прямо в компоненте:
-[USP.tsx:12](../src/components/USP.tsx:12) (`points`) и
-[Contact.tsx:7](../src/components/Contact.tsx:7) (`links`). Это расхождение
-с README и с остальными секциями, см. BACKLOG.
+С контент-релиза v2 правило соблюдается везде: в компонентах не осталось ни одной
+пользовательской строки — включая подписи блоков кейса, префикс «Клиенты:»,
+пункты меню и реквизиты футера. Пути к медиа, интринсики и alt-тексты живут
+в [data/media.ts](../src/data/media.ts) — одном месте, синхронном с `public/media`.
 
 Порядок секций задаётся только в [App.tsx](../src/App.tsx:15):
 `Nav → Hero → Marquee → USP → Cases → Process → Team → Contact`.
@@ -225,9 +259,18 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 скрытым (`y: 110%` внутри `overflow-hidden`). Практическое следствие — LCP-элемент
 страницы не рисуется, пока не выполнится JS-бандл: см. [BACKLOG.md](BACKLOG.md) §12.
 
-**Ни одна анимация не уважает `prefers-reduced-motion`** — ни marquee, ни `gridShift`,
-ни `pulseDot`, ни smooth scroll, ни Framer Motion (замер: 0 таких правил из 191).
-Это самый крупный системный пробел, см. [BACKLOG.md](BACKLOG.md) §1.
+`prefers-reduced-motion` закрыт в четырёх местах — по одному на каждый механизм
+движения, потому что ни один не гасится другими:
+
+| Механизм | Чем гасится |
+|---|---|
+| CSS-анимации (`marquee`, `gridShift`, `pulseDot`), smooth scroll | медиаблок в `@layer utilities` [index.css](../src/index.css) |
+| Framer Motion (анимирует инлайн-стили через rAF) | `MotionConfig reducedMotion="user"` в [main.tsx](../src/main.tsx) |
+| Canvas-ферма Hero | собственная JS-проверка в `useStructuralGrid` |
+| Автоплей ролика кейса | собственная JS-проверка в [ui/LazyVideo.tsx](../src/components/ui/LazyVideo.tsx): вместо петли — постер с контролами |
+
+**Правило для нового кода:** любой новый источник движения вне CSS и Framer Motion
+обязан проверять `matchMedia('(prefers-reduced-motion: reduce)')` сам.
 
 Маска `RevealText` при `leading < 1` **срезает выносные элементы глифов** — замерено
 3.88 px на h1 (маска 66.23 px, ink-бокс 70.12 px). См. [BACKLOG.md](BACKLOG.md) §2.
@@ -250,7 +293,8 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 | Задача | Что править |
 |--------|-------------|
-| Добавить кейс | `src/data/cases.ts` — новый объект `CaseStudy`. Нумерация `NN / total` и бордеры сетки считаются сами. |
+| Добавить кейс | `src/data/cases.ts` — новый объект `CaseStudy`. Нумерация `NN / total` и бордеры сетки считаются сами. Медиа — отдельно, см. следующую строку. |
+| Добавить медиа кейсу | положить оригинал в `site media/`, прописать его в `scripts/optimize-media.mjs`, прогнать `npm run media`, затем описать в `src/data/media.ts` (ключ = `slug` кейса). Интринсики брать из вывода скрипта, alt писать осмысленный. |
 | Добавить участника | `src/data/team.ts`. ⚠️ Вёрстка Team рассчитана ровно на 2 карточки (`md:first:border-r md:last:pr-0`) — третья сломает бордеры. |
 | Добавить шаг методологии | `src/data/process.ts` — `num` задаётся вручную строкой. |
 | Добавить клиента в ленту | `src/data/clients.ts` — дублирование списка для петли делает `Marquee` сам. |
@@ -265,9 +309,14 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 - **Роутер** — страница одна, навигация якорная.
 - **Бэкенд, форма, база** — лид уходит в Telegram/почту внешней ссылкой.
 - **State-менеджер** — единственное состояние во всём приложении это `scrolled` в `Nav`.
-- **Изображения** — визуал строится типографикой и сеткой; в репозитории нет ни одного
-  растрового/векторного ассета (это же означает: нет `og:image` для соцсетей — см. BACKLOG).
 - **Светлая тема** — дизайн-система однорежимная, `prefers-color-scheme` не обрабатывается.
+
+⚠️ Пункт «в репозитории нет ни одного графического ассета» **снят** контент-релизом v2:
+владелец прислал медиа-архив и поставил задачу подключить его к кейсам. Теперь политика
+такая: **производные — в git (`public/media`), оригиналы — нет** (`site media/`
+в `.gitignore`), а всё, что можно получить из исходника кодом (`og.png`,
+`apple-touch-icon.png`), по-прежнему генерируется, а не коммитится. Первый экран
+остаётся без картинок: там типографика, сетка и Canvas-ферма.
 
 ## 11. Навигация по коду: RAG
 

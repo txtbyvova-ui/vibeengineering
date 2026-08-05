@@ -54,7 +54,10 @@ export default function Contact() {
             >
               {link.label}
             </span>
-            <span className="shrink-0 font-mono text-xs uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 group-hover:text-accent md:text-sm">
+            <span
+              lang="en"
+              className="shrink-0 font-mono text-xs uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 group-hover:text-accent md:text-sm"
+            >
               {link.handle} ↗
             </span>
           </a>
