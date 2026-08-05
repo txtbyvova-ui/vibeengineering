@@ -610,7 +610,7 @@ function init(
 
     // Пока идут reveal'ы заголовка и подтягиваются шрифты, мерить бессмысленно.
     if (now - modeStartedAt < GRID.watchdog.warmupMs) return;
-    if (degradation >= 2) return;
+    if (degradation > GRID.watchdog.dprLadder.length) return;
 
     const missedFps = fps < GRID.watchdog.minFps;
     const slowDraw = avgDraw > GRID.watchdog.maxDrawMs;
@@ -622,16 +622,17 @@ function init(
     wdBad = 0;
     degradation++;
 
-    if (degradation === 1) {
+    const nextCap = GRID.watchdog.dprLadder[degradation - 1];
+    if (nextCap !== undefined) {
       // Первый рычаг — заливка: она растёт как dpr², и это главная статья расхода.
-      dprCap = 1;
+      dprCap = nextCap;
       if (resize()) {
         modeStartedAt = now;
         lastTs = 0;
       }
       return;
     }
-    // Второй шаг — заморозка. Страницу не фризим: цикл просто исчезает,
+    // Последний шаг — заморозка. Страницу не фризим: цикл просто исчезает,
     // ферма остаётся видимой статичной композицией.
     frozen = true;
     apply();
