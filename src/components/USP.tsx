@@ -5,17 +5,19 @@ import { uspHeading, uspPoints } from "@/data/usp";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function USP() {
+  const [first, separator, second] = uspHeading.title;
+
   return (
     <section className="px-5 py-24 md:px-10 md:py-40">
       <p className="mono-label mb-8">{uspHeading.eyebrow}</p>
 
       <h2 className="font-display text-[15vw] font-semibold leading-[0.9] tracking-display md:text-[10vw]">
         <RevealText>
-          <span className="text-hollow">Инженер</span>
+          <span className="text-hollow">{first}</span>
         </RevealText>{" "}
-        <span className="text-accent">×</span>{" "}
+        <span className="text-accent">{separator}</span>{" "}
         <RevealText delay={0.1}>
-          <span className="text-hollow">Продюсер</span>
+          <span className="text-hollow">{second}</span>
         </RevealText>
       </h2>
 

@@ -1,14 +1,19 @@
-import type { SectionHeading } from "@/types";
-
 export interface UspPoint {
   label: string;
   title: string;
   body: string;
 }
 
-export const uspHeading: SectionHeading = {
+export const uspHeading = {
   eyebrow: "◆ Почему мы",
-  title: "Инженер × Продюсер",
+  /**
+   * Заголовок тремя кусками. Крайние — контурные, с маской-раскрытием;
+   * средний — акцентный разделитель, он не раскрывается.
+   *
+   * Раньше здесь лежала строка `title`, а разметка была захардкожена
+   * в компоненте: правка данных не давала никакого эффекта.
+   */
+  title: ["Инженер", "×", "Продюсер"] as [string, string, string],
   subtitle: "Два подхода, которые обычно не встречаются в одной студии",
 };
 

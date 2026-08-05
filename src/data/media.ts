@@ -11,7 +11,14 @@ import type { CaseMedia, ResponsiveImage } from "@/types";
  * задан `position`: центр кадра — не всегда то, что надо показать.
  */
 
-export const caseMedia: Record<string, CaseMedia> = {
+/**
+ * Ключ — `slug` кейса. Тип намеренно допускает `undefined`: кейс заводится
+ * в `data/cases.ts` раньше, чем медиа (так написана инструкция в ARCHITECTURE §9),
+ * и без этого промежуток между двумя правками роняет всё приложение —
+ * `noUncheckedIndexedAccess` в проекте выключен, и `media.cover` у отсутствующей
+ * записи бросает TypeError прямо в рендере, без error boundary.
+ */
+export const caseMedia: Record<string, CaseMedia | undefined> = {
   mvideo: {
     cover: {
       base: "cases/mvideo-billboards",
@@ -129,7 +136,7 @@ export const metaCaseImage: ResponsiveImage = {
   position: "object-top",
 };
 
-export const teamPhotos: Record<string, ResponsiveImage> = {
+export const teamPhotos: Record<string, ResponsiveImage | undefined> = {
   vladimir: {
     base: "team/vladimir",
     widths: [320, 480, 720],

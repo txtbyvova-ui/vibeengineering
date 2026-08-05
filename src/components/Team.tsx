@@ -21,7 +21,9 @@ export default function Team() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2">
-        {team.map((member, i) => (
+        {team.map((member, i) => {
+          const photo = teamPhotos[member.slug];
+          return (
           <motion.article
             key={member.name}
             initial={{ opacity: 0, y: 40 }}
@@ -31,11 +33,15 @@ export default function Team() {
             className="border-b border-hairline py-10 md:px-10 md:py-14 md:odd:border-r md:odd:pl-0 md:even:pr-0"
           >
             <div className="flex items-center gap-5">
-              <Picture
-                image={teamPhotos[member.slug]}
-                sizes={PHOTO_SIZES}
-                className="aspect-[3/4] w-24 shrink-0 border border-hairline object-cover md:w-32"
-              />
+              {/* Портрет заводится отдельно от участника — без проверки третий
+                  участник без фото уронил бы всё приложение целиком. */}
+              {photo && (
+                <Picture
+                  image={photo}
+                  sizes={PHOTO_SIZES}
+                  className="aspect-[3/4] w-24 shrink-0 border border-hairline object-cover md:w-32"
+                />
+              )}
               <div>
                 <span className="font-mono text-xs uppercase tracking-[0.16em] text-accent">
                   {member.role}
@@ -67,7 +73,8 @@ export default function Team() {
               {member.skills}
             </p>
           </motion.article>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ import Picture from "@/components/ui/Picture";
 import LazyVideo from "@/components/ui/LazyVideo";
 import { StackChip } from "@/components/ui/CaseCard";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
-import { caseBlockLabels } from "@/data/cases";
+import { caseBlockLabels, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
@@ -47,7 +47,11 @@ export default function CaseModal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const reduced = usePrefersReducedMotion();
-  const open = study !== null;
+  // Медиа считаем до эффектов: без него модалка не рендерится, и блокировать
+  // прокрутку страницы нельзя — иначе кейс без обложки замораживает страницу
+  // без единого видимого диалога.
+  const media = study ? (caseMedia[study.slug] ?? null) : null;
+  const open = study !== null && media !== null;
 
   /**
    * Блокировка прокрутки страницы.
@@ -100,11 +104,14 @@ export default function CaseModal({
         onClose();
         return;
       }
-      if (event.key === "ArrowLeft" && hasPrev) {
+      // У плеера ролика стрелки — перемотка. Перехватывать их под ним нельзя:
+      // пользователь метит в кадр, а получает соседний кейс.
+      const inMedia = event.target instanceof HTMLMediaElement;
+      if (event.key === "ArrowLeft" && hasPrev && !inMedia) {
         onPrev();
         return;
       }
-      if (event.key === "ArrowRight" && hasNext) {
+      if (event.key === "ArrowRight" && hasNext && !inMedia) {
         onNext();
         return;
       }
@@ -116,10 +123,14 @@ export default function CaseModal({
       const last = nodes[nodes.length - 1];
       const active = document.activeElement;
 
-      if (event.shiftKey && (active === first || !dialogRef.current?.contains(active))) {
+      // Обе ветки обязаны ловить «фокус вне диалога» одинаково: кнопка стрелки,
+      // ставшая disabled после переключения кейса, сбрасывает фокус в <body>,
+      // и оттуда штатный Tab уходил за оверлей, к невидимому контенту.
+      const outside = !dialogRef.current?.contains(active);
+      if (event.shiftKey && (active === first || outside)) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && active === last) {
+      } else if (!event.shiftKey && (active === last || outside)) {
         event.preventDefault();
         first.focus();
       }
@@ -137,13 +148,18 @@ export default function CaseModal({
   }, [open]);
 
   // При переключении кейса стрелками прокрутка модалки должна начинаться сверху.
+  // Заодно подбираем фокус: дойдя стрелкой до крайнего кейса, пользователь
+  // нажимает кнопку, которая тут же становится disabled, — браузер по
+  // спецификации снимает с неё фокус и отдаёт его <body>, то есть наружу диалога.
   useEffect(() => {
-    if (study) scrollRef.current?.scrollTo({ top: 0 });
+    if (!study) return;
+    scrollRef.current?.scrollTo({ top: 0 });
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.contains(document.activeElement)) dialog.focus();
   }, [study]);
 
   const stop = useCallback((event: ReactMouseEvent) => event.stopPropagation(), []);
 
-  const media = study ? caseMedia[study.slug] : null;
   const timing = reduced ? { duration: 0 } : { duration: DURATION, ease: EASE };
 
   return createPortal(
@@ -185,7 +201,7 @@ export default function CaseModal({
                   type="button"
                   onClick={onPrev}
                   disabled={!hasPrev}
-                  aria-label="Предыдущий кейс"
+                  aria-label={caseUiLabels.modalPrev}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>←</span>
@@ -194,7 +210,7 @@ export default function CaseModal({
                   type="button"
                   onClick={onNext}
                   disabled={!hasNext}
-                  aria-label="Следующий кейс"
+                  aria-label={caseUiLabels.modalNext}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>→</span>
@@ -202,7 +218,7 @@ export default function CaseModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Закрыть кейс"
+                  aria-label={caseUiLabels.modalClose}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>×</span>

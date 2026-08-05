@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, MutableRefObject } from "react";
 import CaseCard from "@/components/ui/CaseCard";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
+import { caseUiLabels } from "@/data/cases";
 import type { CaseStudy } from "@/types";
 
 /** Сколько обложек грузим не откладывая. */
@@ -25,6 +26,10 @@ interface CaseRailProps {
  */
 export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
   const railRef = useRef<HTMLUListElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
+  /** Кто последним двигал ленту — чтобы не забирать фокус на первом рендере. */
+  const arrowDriven = useRef(false);
   const [progress, setProgress] = useState(0);
   const [thumb, setThumb] = useState(1);
   const [atStart, setAtStart] = useState(true);
@@ -80,6 +85,28 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
   );
 
   /**
+   * Долистав ленту кнопкой до края, пользователь нажимает элемент, который тут же
+   * становится `disabled`, — браузер снимает с него фокус и отдаёт `<body>`.
+   * Следующий Tab после этого начинает обход с самого верха страницы. Переводим
+   * фокус на соседнюю стрелку, но только если ленту вели именно кнопками:
+   * иначе эффект утащил бы фокус к кейсам сразу после загрузки.
+   */
+  useEffect(() => {
+    if (!arrowDriven.current) return;
+    if (document.activeElement !== document.body) return;
+    if (atEnd && !atStart) prevRef.current?.focus();
+    else if (atStart && !atEnd) nextRef.current?.focus();
+  }, [atStart, atEnd]);
+
+  const scrollByArrow = useCallback(
+    (direction: 1 | -1) => {
+      arrowDriven.current = true;
+      scrollByCard(direction);
+    },
+    [scrollByCard]
+  );
+
+  /**
    * Табуляция не должна уводить фокус за кадр. Двигаем именно ленту, а не зовём
    * `scrollIntoView` — тот заодно прокручивает страницу по вертикали.
    */
@@ -112,25 +139,27 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
     <div>
       <div className="mb-6 flex items-center justify-between gap-6">
         <p className="max-w-md font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted">
-          Листайте вбок · нажмите на карточку, чтобы раскрыть
+          {caseUiLabels.hint}
         </p>
 
         {/* Ниже md кнопок нет: там свайп, и они только съедали бы место */}
         <div className="hidden items-center gap-2 md:flex">
           <button
+            ref={prevRef}
             type="button"
-            onClick={() => scrollByCard(-1)}
+            onClick={() => scrollByArrow(-1)}
             disabled={atStart}
-            aria-label="Предыдущие кейсы"
+            aria-label={caseUiLabels.railPrev}
             className="flex h-10 w-10 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <span aria-hidden>←</span>
           </button>
           <button
+            ref={nextRef}
             type="button"
-            onClick={() => scrollByCard(1)}
+            onClick={() => scrollByArrow(1)}
             disabled={atEnd}
-            aria-label="Следующие кейсы"
+            aria-label={caseUiLabels.railNext}
             className="flex h-10 w-10 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <span aria-hidden>→</span>
@@ -143,7 +172,7 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
         <ul
           ref={railRef}
           onKeyDown={onKeyDown}
-          aria-label="Кейсы"
+          aria-label={caseUiLabels.railLabel}
           className="no-scrollbar flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto scroll-px-5 px-5 pb-1 md:scroll-px-10 md:px-10"
         >
           {studies.map((study, i) => (

@@ -312,6 +312,10 @@ export function useStructuralGrid(
     window.addEventListener(
       "pointermove",
       (e) => {
+        // В статическом режиме курсора нет вовсе: draw() всё равно рисует с
+        // px = FAR. Без этой проверки каждое движение пальца по экрану платит
+        // за getBoundingClientRect, результат которого гарантированно выбросят.
+        if (isStatic()) return;
         const rect = host.getBoundingClientRect();
         targetX = e.clientX - rect.left;
         targetY = e.clientY - rect.top;

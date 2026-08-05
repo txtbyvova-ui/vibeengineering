@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import Picture from "@/components/ui/Picture";
-import { TBD } from "@/data/cases";
+import { TBD, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
@@ -31,16 +31,28 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
       onClick={onOpen}
       onFocus={(event) => onFocus(event.currentTarget)}
       aria-haspopup="dialog"
+      // Без явного имени скринридер зачитывает как подпись кнопки всю карточку
+      // целиком — 243 символа вместе с метриками (замерено). Внутренности при
+      // этом остаются в DOM: их читает виртуальный курсор, а не метка кнопки.
+      aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
       // Ширина и snap живут на <li> в ленте — здесь карточка просто растягивается
       // на слот, чтобы все были одной высоты.
       className="group flex h-full w-full flex-col border border-hairline bg-bg text-left transition-colors duration-500 ease-premium hover:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
-      <Picture
-        image={media.cover}
-        sizes={COVER_SIZES}
-        eager={eager}
-        className="aspect-[16/10] w-full border-b border-hairline object-cover"
-      />
+      {/* Обложки может не быть: кейс заводится раньше медиа. Пробел показываем
+          пунктиром — как чип стека, а не роняем всё приложение. */}
+      {media ? (
+        <Picture
+          image={media.cover}
+          sizes={COVER_SIZES}
+          eager={eager}
+          className="aspect-[16/10] w-full border-b border-hairline object-cover"
+        />
+      ) : (
+        <div className="flex aspect-[16/10] w-full items-center justify-center border-b border-dashed border-hairline font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted/60">
+          {TBD}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-6">
         <div className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted">
@@ -81,7 +93,7 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
         </div>
 
         <span className="mt-5 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 group-hover:text-accent">
-          Смотреть кейс
+          {caseUiLabels.open}
           <span aria-hidden>→</span>
         </span>
       </div>

@@ -15,8 +15,12 @@ interface LazyVideoProps {
  * не сообщил о пересечении.
  *
  * При `prefers-reduced-motion: reduce` автоплей не включается — вместо петли
- * показываем постер с нативными контролами. CSS-блок в index.css сюда не достаёт:
- * он гасит CSS-анимации, а не воспроизведение медиа.
+ * показываем постер. CSS-блок в index.css сюда не достаёт: он гасит
+ * CSS-анимации, а не воспроизведение медиа.
+ *
+ * Контролы стоят ВСЕГДА, а не только при reduce: ролик длиннее минуты и играет
+ * в петле, то есть без механизма паузы это прямое нарушение WCAG 2.2.2.
+ * Селектор ловушки фокуса в CaseModal на `video[controls]` уже рассчитан.
  */
 export default function LazyVideo({ video, className = "" }: LazyVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -64,7 +68,7 @@ export default function LazyVideo({ video, className = "" }: LazyVideoProps) {
       muted
       loop
       playsInline
-      controls={reduce}
+      controls
       aria-label={video.alt}
       className={className}
     >
