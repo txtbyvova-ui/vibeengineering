@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
 import type { MediaVideo } from "@/types";
 
 const BASE = "/media/";
@@ -20,15 +21,7 @@ interface LazyVideoProps {
 export default function LazyVideo({ video, className = "" }: LazyVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const [visible, setVisible] = useState(false);
-  const [reduce, setReduce] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduce(query.matches);
-    const onChange = () => setReduce(query.matches);
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
+  const reduce = usePrefersReducedMotion();
 
   useEffect(() => {
     const el = ref.current;

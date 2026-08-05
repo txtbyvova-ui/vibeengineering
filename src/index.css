@@ -116,6 +116,25 @@
 }
 
 @layer utilities {
+  /* Полоса прокрутки внутри ленты кейсов: её роль играет индикатор прогресса */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Пока открыт кейс, фиксированная шапка убирается: mix-blend-difference
+     инвертируется относительно оверлея и остаётся читаемой поверх него,
+     хотя клики уже перехвачены подложкой. Класс ставит CaseModal. */
+  body.modal-open header {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* Блок обязан лежать в utilities: слой Tailwind-утилит идёт после
      пользовательских правил, и голое правило перебили бы .animate-marquee
      и .animate-pulseDot.
