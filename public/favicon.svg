@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Vibe Engineering">
+  <rect width="64" height="64" fill="#0D0D0D"/>
+  <!-- V — акцентом, E — основным текстовым цветом: та же пара, что в шапке сайта -->
+  <path d="M11 17 L21 45 L31 17" fill="none" stroke="#FF4F00" stroke-width="6.5" stroke-linejoin="miter"/>
+  <g fill="#F4F4F0">
+    <rect x="38" y="17" width="6.5" height="28"/>
+    <rect x="38" y="17" width="15" height="6.5"/>
+    <rect x="38" y="27.75" width="12" height="6.5"/>
+    <rect x="38" y="38.5" width="15" height="6.5"/>
+  </g>
+</svg>

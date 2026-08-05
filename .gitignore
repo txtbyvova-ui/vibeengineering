@@ -5,6 +5,12 @@ dist-ssr
 .DS_Store
 .vite
 
-# OG-карточка генерируется сборкой (scripts/generate-og.mjs).
-# В репозитории держим код, а не бинарный ассет.
+# OG-карточка и apple-touch-icon генерируются сборкой
+# (scripts/generate-og.mjs, scripts/generate-icons.mjs).
+# В репозитории держим исходник (favicon.svg), а не производный растр.
 public/og.png
+public/apple-touch-icon.png
+
+# Исходный медиа-архив (оригиналы от владельца). В прод едут только
+# оптимизированные производные из public/media — см. scripts/optimize-media.mjs.
+site media/

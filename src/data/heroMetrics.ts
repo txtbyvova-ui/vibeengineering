@@ -5,9 +5,9 @@ import type { HeroMetric } from "@/types";
  * поэтому «30M+» разложено на value 30 и suffix "M+".
  */
 export const HERO_METRICS: readonly HeroMetric[] = [
-  { value: 120, suffix: "", label: "часов до запуска" },
-  { value: 400, suffix: "+", label: "проектов" },
-  { value: 30, suffix: "M+", label: "охватов" },
+  { value: 48, suffix: "", label: "часов до первого запуска" },
+  { value: 400, suffix: "+", label: "реализованных проектов" },
+  { value: 30, suffix: "M+", label: "охватов в кампаниях" },
 ];
 
 /** Цели count-up отдельной константой: стабильная ссылка для зависимостей хука. */

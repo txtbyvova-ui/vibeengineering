@@ -4,22 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0D0D0D" />
-    <title>Vibe Engineering — Web Dev & AI Integration</title>
+    <title>Vibe Engineering — сайты, боты и веб-приложения на заказ, Москва</title>
     <meta
       name="description"
-      content="Инженерное бюро, которое строило порталы и мосты. Теперь делаем веб-продукты с запасом прочности. MVP, боты, AI-интеграции. Спринты от 7 дней."
+      content="Инженерное бюро в Москве: считаем нагрузку до старта. Сайты, Telegram-боты, веб-приложения и AI-интеграции. Первый рабочий результат — через 48 часов, смета с фиксированной стоимостью — за 2 часа."
     />
     <link rel="canonical" href="https://vibeengineering.ru/" />
+
+    <!-- Иконки: SVG в git как исходник, apple-touch-icon.png собирается в prebuild -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://vibeengineering.ru/" />
     <meta property="og:site_name" content="Vibe Engineering" />
     <meta property="og:locale" content="ru_RU" />
-    <meta property="og:title" content="Vibe Engineering — Web Dev & AI Integration" />
+    <meta
+      property="og:title"
+      content="Vibe Engineering — сайты, боты и веб-приложения на заказ, Москва"
+    />
     <meta
       property="og:description"
-      content="Инженерный подход из оффлайна — в digital. MVP, веб-приложения, боты и AI-интеграции с запасом прочности башенного крана."
+      content="Мы строили мосты, порталы и ивенты. Теперь строим ваш digital: считаем нагрузку до старта, первый рабочий результат — через 48 часов."
     />
     <!-- og.png собирается скриптом scripts/generate-og.mjs (npm run og), в git не коммитится -->
     <meta property="og:image" content="https://vibeengineering.ru/og.png" />
@@ -27,15 +34,18 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Vibe Engineering — инженерное бюро: веб-продукты с запасом прочности"
+      content="Vibe Engineering — сайты, боты и веб-приложения: первый рабочий результат через 48 часов"
     />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Vibe Engineering — Web Dev & AI Integration" />
+    <meta
+      name="twitter:title"
+      content="Vibe Engineering — сайты, боты и веб-приложения на заказ, Москва"
+    />
     <meta
       name="twitter:description"
-      content="Инженерный подход из оффлайна — в digital. MVP, веб-приложения, боты и AI-интеграции с запасом прочности башенного крана."
+      content="Мы строили мосты, порталы и ивенты. Теперь строим ваш digital: считаем нагрузку до старта, первый рабочий результат — через 48 часов."
     />
     <meta name="twitter:image" content="https://vibeengineering.ru/og.png" />
 
@@ -56,6 +66,94 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+
+    <!--
+      JSON-LD. Organization и LocalBusiness — один и тот же субъект, поэтому
+      связаны через @id, а не продублированы двумя независимыми узлами.
+      В sameAs только проверенные профили (оба отвечают 200 и опубликованы
+      ссылками на самой странице).
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://vibeengineering.ru/#organization",
+            "name": "Vibe Engineering",
+            "legalName": "ООО «ВАЙБ ИНЖИНИРИНГ»",
+            "url": "https://vibeengineering.ru/",
+            "logo": "https://vibeengineering.ru/apple-touch-icon.png",
+            "image": "https://vibeengineering.ru/og.png",
+            "email": "hq@vibeengineering.ru",
+            "description": "Инженерное бюро: сайты, Telegram-боты, веб-приложения и AI-интеграции. Первый рабочий результат — через 48 часов.",
+            "sameAs": [
+              "https://t.me/vibeengineering",
+              "https://github.com/vibeengineering"
+            ],
+            "founder": [
+              {
+                "@type": "Person",
+                "name": "Владимир Егоров",
+                "jobTitle": "Креативный продюсер"
+              },
+              {
+                "@type": "Person",
+                "name": "Роман Петров",
+                "jobTitle": "Технический директор"
+              }
+            ]
+          },
+          {
+            "@type": "LocalBusiness",
+            "@id": "https://vibeengineering.ru/#business",
+            "parentOrganization": { "@id": "https://vibeengineering.ru/#organization" },
+            "name": "Vibe Engineering",
+            "url": "https://vibeengineering.ru/",
+            "image": "https://vibeengineering.ru/og.png",
+            "email": "hq@vibeengineering.ru",
+            "priceRange": "$$",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Москва",
+              "addressCountry": "RU"
+            },
+            "areaServed": "RU",
+            "knowsLanguage": ["ru", "en"],
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Услуги",
+              "itemListElement": [
+                {
+                  "@type": "Offer",
+                  "itemOffered": { "@type": "Service", "name": "Разработка сайтов" }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": { "@type": "Service", "name": "Telegram-боты" }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": { "@type": "Service", "name": "Веб-приложения" }
+                },
+                {
+                  "@type": "Offer",
+                  "itemOffered": { "@type": "Service", "name": "AI-интеграции" }
+                }
+              ]
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://vibeengineering.ru/#website",
+            "url": "https://vibeengineering.ru/",
+            "name": "Vibe Engineering",
+            "inLanguage": "ru-RU",
+            "publisher": { "@id": "https://vibeengineering.ru/#organization" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

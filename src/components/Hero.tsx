@@ -3,11 +3,21 @@ import { motion } from "framer-motion";
 import RevealText from "@/components/ui/RevealText";
 import HeroMetrics from "@/components/ui/HeroMetrics";
 import StructuralGridCanvas from "@/components/ui/StructuralGridCanvas";
+import { hero } from "@/data/hero";
+import type { HeadlinePart } from "@/data/hero";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+/** Куски заголовка → строки: `break` открывает новую. */
+const lines = hero.headline.reduce<HeadlinePart[][]>((acc, part) => {
+  if (part.break || acc.length === 0) acc.push([]);
+  acc[acc.length - 1].push(part);
+  return acc;
+}, []);
+
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
+  let partIndex = 0;
 
   return (
     <section
@@ -29,28 +39,33 @@ export default function Hero() {
         className="relative z-10 flex items-center gap-3"
       >
         <span className="h-2 w-2 shrink-0 animate-pulseDot rounded-full bg-accent" />
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
-          Hardware is dead. We write code now.
+        <span lang="en" className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+          {hero.microLabel}
         </span>
       </motion.div>
 
       {/* H1 */}
       <div className="relative z-10 mt-auto">
-        <h1 className="font-display text-[13vw] font-semibold leading-[0.92] tracking-display md:text-[9vw]">
-          <span className="block">
-            <RevealText delay={0.05}>Мы строили</RevealText>{" "}
-            <RevealText delay={0.12} className="italic text-accent">
-              мосты
-            </RevealText>{" "}
-            <RevealText delay={0.19}>и</RevealText>{" "}
-            <RevealText delay={0.26} className="italic text-accent">
-              порталы.
-            </RevealText>
-          </span>
-          <span className="block">
-            <RevealText delay={0.36}>Теперь делаем</RevealText>{" "}
-            <RevealText delay={0.43}>веб.</RevealText>
-          </span>
+        {/* Ниже md заголовок переносится по словам, и при leading < 1 маски
+            RevealText срезают глифы соседних строк — держим здесь запас. */}
+        <h1 className="font-display text-[11vw] font-semibold leading-[1.08] tracking-display md:text-[7.4vw] md:leading-[0.92]">
+          {lines.map((line, li) => (
+            <span key={li} className="block">
+              {line.map((part) => {
+                const delay = 0.05 + partIndex++ * 0.07;
+                return (
+                  <span key={part.text}>
+                    <RevealText
+                      delay={delay}
+                      className={part.accent ? "italic text-accent" : undefined}
+                    >
+                      {part.text}
+                    </RevealText>{" "}
+                  </span>
+                );
+              })}
+            </span>
+          ))}
         </h1>
 
         <HeroMetrics className="mt-10" />
@@ -62,9 +77,7 @@ export default function Hero() {
             transition={{ duration: 0.9, delay: 0.6, ease: EASE }}
             className="max-w-xl text-base text-textMuted md:text-lg"
           >
-            Инженерный подход из оффлайна — в digital. MVP, веб-приложения, боты
-            и AI-интеграции с запасом прочности башенного крана. Спринты от 7
-            дней.
+            {hero.lead}
           </motion.p>
 
           <motion.div
@@ -74,12 +87,15 @@ export default function Hero() {
             className="md:justify-self-end"
           >
             <a
-              href="#contact"
+              href={hero.cta.href}
               className="btn-fill inline-flex items-center gap-3 bg-accent px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              Запустить протокол
+              {hero.cta.label}
               <span aria-hidden>→</span>
             </a>
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.16em] text-textMuted md:text-right">
+              {hero.ctaNote}
+            </p>
           </motion.div>
         </div>
       </div>

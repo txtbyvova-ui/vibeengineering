@@ -101,7 +101,7 @@ function card() {
               letterSpacing: "0.18em",
               color: ACCENT,
             },
-            "WEB · MVP · AI",
+            "САЙТЫ · БОТЫ · ВЕБ-ПРИЛОЖЕНИЯ",
           ),
         ],
       ),
@@ -150,8 +150,8 @@ function card() {
         [
           h(
             "div",
-            { fontFamily: "JetBrains Mono", fontSize: 30, color: TEXT, lineHeight: 1.4 },
-            "Инженерное бюро: веб-продукты с запасом прочности",
+            { fontFamily: "JetBrains Mono", fontSize: 28, color: TEXT, lineHeight: 1.4 },
+            "Считаем нагрузку до старта. Первый рабочий результат — через 48 часов",
           ),
           h(
             "div",
@@ -161,21 +161,21 @@ function card() {
                 "div",
                 {
                   fontFamily: "JetBrains Mono",
-                  fontSize: 24,
-                  letterSpacing: "0.14em",
-                  color: MUTED,
+                  fontSize: 22,
+                  letterSpacing: "0.12em",
+                  color: ACCENT,
                 },
-                "VIBEENGINEERING.RU",
+                "48Ч ДО ЗАПУСКА · 400+ ПРОЕКТОВ · 30M+ ОХВАТОВ",
               ),
               h(
                 "div",
                 {
                   fontFamily: "JetBrains Mono",
-                  fontSize: 24,
-                  letterSpacing: "0.14em",
+                  fontSize: 22,
+                  letterSpacing: "0.12em",
                   color: MUTED,
                 },
-                "МОСКВА",
+                "VIBEENGINEERING.RU",
               ),
             ],
           ),
