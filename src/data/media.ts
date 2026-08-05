@@ -4,11 +4,16 @@ import type { CaseMedia, ResponsiveImage } from "@/types";
  * Единственное место, где живут пути к ассетам, интринсики и alt-тексты.
  * Файлы производит `node scripts/optimize-media.mjs` из `site media/`;
  * менять руками нельзя — при следующем прогоне затрёт.
+ *
+ * `cover` есть у каждого кейса и всегда рендерится в одной пропорции
+ * (`object-cover` в фиксированном боксе) — карточки ленты обязаны совпадать
+ * по размеру. Исходники при этом разного соотношения, поэтому у части из них
+ * задан `position`: центр кадра — не всегда то, что надо показать.
  */
 
 export const caseMedia: Record<string, CaseMedia> = {
   mvideo: {
-    main: {
+    cover: {
       base: "cases/mvideo-billboards",
       widths: [640, 960, 1280],
       width: 1280,
@@ -23,7 +28,7 @@ export const caseMedia: Record<string, CaseMedia> = {
       height: 360,
       alt: "Ролик кампании One Swipe Offer для М.Видео-Эльдорадо, 2022",
     },
-    thumbs: [
+    gallery: [
       {
         base: "cases/mvideo-interview",
         widths: [640, 960],
@@ -32,14 +37,13 @@ export const caseMedia: Record<string, CaseMedia> = {
         alt:
           "HR-специалист М.Видео проводит видеособеседование с кандидатом, " +
           "пришедшим из кампании в Tinder",
-        aspect: "aspect-[4/3]",
         position: "object-[center_35%]",
       },
     ],
   },
 
   vegroove: {
-    main: {
+    cover: {
       base: "cases/vegroove-site",
       widths: [640, 960, 1280],
       width: 1280,
@@ -52,7 +56,7 @@ export const caseMedia: Record<string, CaseMedia> = {
   },
 
   kupikod: {
-    main: {
+    cover: {
       base: "cases/kupikod-portal",
       widths: [640, 960, 1280],
       width: 1280,
@@ -61,7 +65,7 @@ export const caseMedia: Record<string, CaseMedia> = {
         "Стальной портал Kupikod с зелёной подсветкой на ВДНХ зимней ночью, " +
         "в проёме — колесо обозрения",
     },
-    thumbs: [
+    gallery: [
       {
         base: "cases/kupikod-model",
         widths: [320, 480],
@@ -91,7 +95,7 @@ export const caseMedia: Record<string, CaseMedia> = {
   },
 
   alfabank: {
-    main: {
+    cover: {
       base: "cases/alfabank-battle",
       widths: [640, 960],
       width: 960,
@@ -100,7 +104,7 @@ export const caseMedia: Record<string, CaseMedia> = {
         "Ключевой визуал квеста Alfa Battle Space для Альфа-Банка: " +
         "человек в скафандре и слоган «Изобретайте»",
     },
-    thumbs: [
+    gallery: [
       {
         base: "cases/alfabank-deck",
         widths: [640, 960],
@@ -109,7 +113,6 @@ export const caseMedia: Record<string, CaseMedia> = {
         alt:
           "Разворот концепции Alfa Battle Space: раздел «Решение» — " +
           "продакты бросают рутину и проектируют финтех-продукт для космоса",
-        aspect: "aspect-[16/9]",
       },
     ],
   },

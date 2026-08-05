@@ -8,14 +8,23 @@ interface PictureProps {
   sizes: string;
   /** Классы на сам <img>: тут задаются aspect-ratio и object-fit. */
   className?: string;
+  /**
+   * Снимает ленивую загрузку. Ставить только тому, что гарантированно видно
+   * сразу после доскролла до секции — первым карточкам ленты кейсов.
+   */
+  eager?: boolean;
 }
 
 /**
  * AVIF → WebP → JPEG. Ширина и высота всегда в атрибутах: без них браузер
- * не резервирует место и первый экран прыгает при подгрузке (CLS).
- * Медиа на странице нет выше сгиба, поэтому loading="lazy" здесь безусловный.
+ * не резервирует место и вёрстка прыгает при подгрузке (CLS).
  */
-export default function Picture({ image, sizes, className = "" }: PictureProps) {
+export default function Picture({
+  image,
+  sizes,
+  className = "",
+  eager = false,
+}: PictureProps) {
   const srcSet = (ext: string) =>
     image.widths.map((w) => `${BASE}${image.base}-${w}.${ext} ${w}w`).join(", ");
 
@@ -28,7 +37,10 @@ export default function Picture({ image, sizes, className = "" }: PictureProps) 
         alt={image.alt}
         width={image.width}
         height={image.height}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
+        // Ленту видно не сразу, поэтому её обложки не должны конкурировать
+        // за канал с первым экраном: eager, но низким приоритетом.
+        fetchPriority={eager ? "low" : undefined}
         decoding="async"
         className={`${className} ${image.position ?? ""}`}
       />
