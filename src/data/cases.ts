@@ -5,6 +5,9 @@ export const casesHeading: SectionHeading = {
   title: "Избранное",
 };
 
+/** Имя списка кейсов в структурированных данных. */
+export const casesListName = "Избранные кейсы Vibe Engineering";
+
 /** Подписи блоков кейса — порядок совпадает с problem/solution/result. */
 export const caseBlockLabels = ["Задача", "Решение", "Результат"] as const;
 

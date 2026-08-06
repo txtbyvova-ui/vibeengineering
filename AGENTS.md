@@ -43,14 +43,22 @@ npm install
 | `npm run dev` | dev-сервер на http://localhost:5173 | рабочая |
 | `npm run typecheck` | `tsc --noEmit` | рабочая, проходит чисто |
 | `npm run og` | генерация `public/og.png` (Satori + resvg) | рабочая, ~2 с |
-| `npm run icons` | генерация `public/apple-touch-icon.png` из `favicon.svg` | рабочая |
+| `npm run icons` | генерация `public/apple-touch-icon.png` и `favicon.ico` из `favicon.svg` | рабочая |
 | `npm run media` | пережатие `site media/` → `public/media` (ffmpeg) | рабочая, **разовая** — в `build` не подключена |
 | `npm run build` | `prebuild` (og + icons) → `tsc --noEmit && vite build` | рабочая, ~6 с |
 | `npm run preview` | превью прод-сборки | рабочая |
 | `npm run lint` | `eslint .` | **сломана** — eslint не установлен и не сконфигурирован |
 
-Первая сборка на чистой машине требует сети (скрипт OG тянет TTF с CDN шрифтов
-и кэширует в `node_modules/.cache`). Дальше сборка офлайн-способна.
+Первая сборка на чистой машине требует сети: скрипт OG тянет TTF с двух CDN
+(`api.fontshare.com`, `fonts.googleapis.com`) и кэширует их в `.cache/og-fonts`
+(вне git). Дальше сборка на **этой же машине** офлайн-способна.
+
+⚠️ На чистом раннере кэша нет по определению, поэтому **любая CI/хостинговая
+сборка жёстко зависит от доступности обоих CDN**: `prebuild` при отказе делает
+`process.exit(1)`, и `npm run build` не стартует вовсе. Кэш держится вне
+`node_modules` намеренно — `npm ci` сносит его целиком, — но чистую установку
+это не спасает. Радикальное решение (закоммитить два TTF, ~158 кБ) требует
+проверки лицензий и решения владельца, см. [docs/BACKLOG.md](docs/BACKLOG.md).
 
 ## 4. Гейт перед словом «готово»
 
@@ -128,8 +136,11 @@ rag index --root .
 rag query "marquee infinite scroll" --root . --top-k 5
 ```
 
-Конфиг — [tools/rag.config.json](tools/rag.config.json) (`maxFileBytes: 65536`, чтобы
-`package-lock.json` не засорял выдачу). Индекс `.rag/` самоигнорируется, в git не идёт.
+Конфиг — [tools/rag.config.json](tools/rag.config.json) (`maxFileBytes: 90000`, чтобы
+`package-lock.json` — 111 КБ — не засорял выдачу, но самый крупный документ репозитория,
+`docs/SPEC-hero-truss.md` на 68 КБ, в индекс попадал). Здесь и в MEMORY значилось
+`65536` — при таком пороге спека молча выпала бы из индекса; число исправлено 2026-08-06
+по факту файла. Индекс `.rag/` самоигнорируется, в git не идёт.
 Пересобирать после заметных правок исходников.
 
 ## 9. Память

@@ -120,13 +120,11 @@ function video() {
       "-profile:v", "main", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
       "-an", out(".mp4")]);
 
-  for (const [ext, args] of [
-    [".poster.webp", ["-c:v", "libwebp", "-quality", "76"]],
-    [".poster.jpg", ["-q:v", "6"]],
-  ]) {
-    ff(["-ss", String(VIDEO.posterAt), "-i", src, "-frames:v", "1", "-vf", scale,
-        ...args, out(ext)]);
-  }
+  // Только .jpg: WebP-постер генерировался и коммитился, но `<video poster>`
+  // принимает ровно один URL, и LazyVideo всегда просит .jpg — 7.8 kB в git
+  // лежали мёртвыми. Вернуть, если появится второй потребитель.
+  ff(["-ss", String(VIDEO.posterAt), "-i", src, "-frames:v", "1", "-vf", scale,
+      "-q:v", "6", out(".poster.jpg")]);
 
   const [w, h] = probe(out(".mp4"));
   console.log(
@@ -143,6 +141,17 @@ function total(dir) {
     bytes += entry.isDirectory() ? total(p) : statSync(p).size;
   }
   return bytes;
+}
+
+// Предполётная проверка всех исходников разом: падение на N-й записи посреди
+// прогона оставляло public/media наполовину пересобранным, и разбираться,
+// докуда дошло, приходилось глазами.
+const missing = [...IMAGES.map(([file]) => file), VIDEO.src].filter(
+  (file) => !existsSync(path.join(SRC, file))
+);
+if (missing.length > 0) {
+  console.error(`нет исходников в «${SRC}»:\n  ${missing.join("\n  ")}`);
+  process.exit(1);
 }
 
 ensure(OUT);

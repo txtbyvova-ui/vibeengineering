@@ -37,7 +37,12 @@ export default function Picture({
     image.widths.map((w) => `${BASE}${image.base}-${w}.${ext} ${w}w`).join(", ");
 
   return (
-    <picture>
+    // display: contents — чтобы размеры и flex-свойства с className достались
+    // элементу, который реально участвует в раскладке. Без этого во флексе
+    // элементом становится сам <picture> (shrink: 1), а `shrink-0 w-24` висят
+    // на <img> внутри и не работают: портрет в Team ужимался соседним текстом
+    // до 94 px вместо 96 — и две карточки основателей расходились по размеру.
+    <picture className="contents">
       <source type="image/avif" srcSet={srcSet("avif")} sizes={sizes} />
       <source type="image/webp" srcSet={srcSet("webp")} sizes={sizes} />
       <img

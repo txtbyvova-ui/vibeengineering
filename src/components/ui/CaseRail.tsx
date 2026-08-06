@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, MutableRefObject } from "react";
 import CaseCard from "@/components/ui/CaseCard";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
@@ -43,6 +43,24 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const reduced = usePrefersReducedMotion();
+
+  /**
+   * Обработчики карточек — стабильные, по одному набору на состав ленты.
+   * Раньше и `ref`, и `onOpen` были инлайновыми стрелками: каждый скролл ленты
+   * двигает `progress`, то есть перерисовывает компонент, а вместе с ним React
+   * отцеплял и прицеплял все ref'ы карточек и считал пропсы изменившимися.
+   * С мемоизированным набором `React.memo` на карточке наконец работает.
+   */
+  const cardHandlers = useMemo(
+    () =>
+      studies.map((_, i) => ({
+        ref: (node: HTMLButtonElement | null) => {
+          cardRefs.current[i] = node;
+        },
+        open: () => onOpen(i),
+      })),
+    [studies, onOpen, cardRefs]
+  );
 
   const measure = useCallback(() => {
     const rail = railRef.current;
@@ -134,17 +152,35 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
     }
   }, []);
 
+  /**
+   * Стрелки внутри ленты двигают ФОКУС на соседнюю карточку, а прокрутку за ним
+   * подтягивает `keepInView`. Раньше они двигали только ленту: сфокусированная
+   * карточка уезжала за кадр, и следующий Tab отматывал ленту обратно к ней.
+   *
+   * Модификаторы не наши: Alt+← у браузера — «назад» по истории (в macOS Cmd+←).
+   * Фокус попадает в ленту штатно — `Cases.close()` сам возвращает его на
+   * карточку после закрытия модалки, так что перехват срабатывал сразу за Esc.
+   */
   const onKeyDown = useCallback(
     (event: ReactKeyboardEvent) => {
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        scrollByCard(1);
-      } else if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        scrollByCard(-1);
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const current = cardRefs.current.indexOf(
+        document.activeElement as HTMLButtonElement
+      );
+      const next = current + direction;
+
+      event.preventDefault();
+      if (current !== -1 && next >= 0 && next < cardRefs.current.length) {
+        cardRefs.current[next]?.focus();
+      } else if (current === -1) {
+        // Фокус не на карточке (например, на самой ленте) — просто листаем.
+        scrollByCard(direction);
       }
     },
-    [scrollByCard]
+    [scrollByCard, cardRefs]
   );
 
   return (
@@ -190,14 +226,12 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
           {studies.map((study, i) => (
             <li key={study.slug} className="w-[85vw] shrink-0 snap-start sm:w-[24rem] md:w-[26rem]">
               <CaseCard
-                ref={(node) => {
-                  cardRefs.current[i] = node;
-                }}
+                ref={cardHandlers[i].ref}
                 study={study}
                 index={i}
                 total={studies.length}
                 eager={i < EAGER_COUNT}
-                onOpen={() => onOpen(i)}
+                onOpen={cardHandlers[i].open}
                 onFocus={keepInView}
               />
             </li>

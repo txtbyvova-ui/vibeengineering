@@ -25,11 +25,12 @@ export const contactLinks: ContactLink[] = [
     handle: "hq@vibeengineering.ru",
     href: "mailto:hq@vibeengineering.ru",
   },
-  {
-    label: "GitHub",
-    handle: "/vibeengineering",
-    href: "https://github.com/vibeengineering",
-  },
+  // ⚠️ Третьим блоком стоял GitHub на github.com/vibeengineering. Проверено
+  // через GitHub API 2026-08-06: это организация «VibeEngineering.ai»
+  // (сайт vibeengineering.ai, 0 публичных репозиториев, создана 2025-04-09) —
+  // посторонняя компания, а не бюро. Код бюро лежит на txtbyvova-ui/vibeengineering.
+  // Блок снят: один из трёх каналов связи уводил посетителя на пустую страницу
+  // чужого аккаунта. Вернуть, вписав НАСТОЯЩИЙ аккаунт, если он есть.
 ];
 
 /**

@@ -40,7 +40,9 @@ export const caseMedia: Record<string, CaseMedia | undefined> = {
         base: "cases/mvideo-interview",
         widths: [640, 960],
         width: 960,
-        height: 1212,
+        // 1214, а не 1212: интринсики берутся из ПРОИЗВОДНОЙ, а прежнее число
+        // было от оригинала. На вёрстку не влияет — пропорцию задаёт CSS.
+        height: 1214,
         alt:
           "HR-специалист М.Видео проводит видеособеседование с кандидатом, " +
           "пришедшим из кампании в Tinder",

@@ -1,4 +1,4 @@
-import { TBD, cases } from "@/data/cases";
+import { TBD, cases, casesListName } from "@/data/cases";
 
 const ORIGIN = "https://vibeengineering.ru";
 
@@ -17,7 +17,7 @@ export default function CasesJsonLd() {
   const payload = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Избранные кейсы Vibe Engineering",
+    name: casesListName,
     itemListOrder: "https://schema.org/ItemListOrderAscending",
     numberOfItems: cases.length,
     itemListElement: cases.map((study, i) => {

@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, memo } from "react";
 import Picture from "@/components/ui/Picture";
 import { TBD, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
@@ -90,7 +90,9 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
               <div className="font-display text-xl font-semibold text-accent">
                 {metric.value}
               </div>
-              <div className="mt-1 font-mono text-[9px] uppercase leading-[1.3] tracking-[0.1em] text-textMuted">
+              {/* break-words: «собеседований» при tracking шире своей трети
+                  на 320 px — см. ту же правку в HeroMetrics. */}
+              <div className="mt-1 break-words font-mono text-[9px] uppercase leading-[1.3] tracking-[0.1em] text-textMuted">
                 {metric.label}
               </div>
             </div>
@@ -106,7 +108,9 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
   );
 });
 
-export default CaseCard;
+// memo не украшение: лента перерисовывается на каждое событие scroll (индикатор
+// прогресса — состояние), а карточка тянет за собой <picture> с тремя srcSet.
+export default memo(CaseCard);
 
 /** Чип стека. Плейсхолдер рисуем пунктиром — пробел должен быть виден. */
 export function StackChip({ label }: { label: string }) {

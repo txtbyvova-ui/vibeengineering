@@ -18,7 +18,7 @@
  *   шрифтом дизайн-системы с кириллическим покрытием.
  */
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,7 +27,10 @@ import { Resvg } from "@resvg/resvg-js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "public", "og.png");
-const CACHE = path.join(ROOT, "node_modules", ".cache", "og-fonts");
+// Кэш вне node_modules: `npm ci` по спецификации сносит node_modules целиком,
+// и кэш внутри него не переживал бы установку — сборка ходила бы в сеть каждый
+// раз. Каталог закрыт .gitignore.
+const CACHE = path.join(ROOT, ".cache", "og-fonts");
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -51,18 +54,59 @@ async function resolveTtfUrl(cssUrl, userAgent) {
   return match[1].startsWith("//") ? `https:${match[1]}` : match[1];
 }
 
-/** Скачивает шрифт с диска-кэша или из сети. Кэш живёт в node_modules — вне git. */
+/**
+ * Проверка, что перед нами целый sfnt-контейнер, а не огрызок и не HTML
+ * от корпоративного прокси. Без неё битый кэш блокировал КАЖДУЮ последующую
+ * сборку, включая офлайновую: `existsSync` возвращал true, сеть не спрашивалась,
+ * а satori падал невнятным «Offset is outside the bounds of the DataView».
+ *
+ * Одной сигнатуры мало — у обрезанного файла первые четыре байта целые
+ * (проверено: файл, урезанный до 4 КБ, сигнатуру проходит). Поэтому читаем
+ * директорию таблиц и требуем, чтобы файл дотягивал до конца самой дальней.
+ */
+function isCompleteFont(buf) {
+  if (buf.length < 12) return false;
+  const tag = buf.subarray(0, 4).toString("latin1");
+  const known =
+    buf.readUInt32BE(0) === 0x00010000 || tag === "OTTO" || tag === "true";
+  if (!known) return false;
+
+  const numTables = buf.readUInt16BE(4);
+  const dirEnd = 12 + numTables * 16;
+  if (numTables === 0 || buf.length < dirEnd) return false;
+
+  let needed = dirEnd;
+  for (let i = 0; i < numTables; i++) {
+    const record = 12 + i * 16;
+    needed = Math.max(needed, buf.readUInt32BE(record + 8) + buf.readUInt32BE(record + 12));
+  }
+  return buf.length >= needed;
+}
+
+/** Скачивает шрифт с диска-кэша или из сети. Кэш вне git и вне node_modules. */
 async function loadFont(cacheKey, cssUrl, userAgent) {
   const cached = path.join(CACHE, `${cacheKey}.ttf`);
-  if (existsSync(cached)) return readFile(cached);
+  if (existsSync(cached)) {
+    const buf = await readFile(cached);
+    if (isCompleteFont(buf)) return buf;
+    // Битый кэш чиним сами, а не заставляем человека догадываться.
+    console.warn(`og: кэш ${cached} повреждён — качаю заново`);
+    await rm(cached, { force: true });
+  }
 
   const ttfUrl = await resolveTtfUrl(cssUrl, userAgent);
   const res = await fetch(ttfUrl);
   if (!res.ok) throw new Error(`${ttfUrl} → HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
+  if (!isCompleteFont(buf))
+    throw new Error(`${ttfUrl} отдал не шрифт или отдал не целиком (${buf.length} байт)`);
 
+  // Запись через временный файл: прерванная сборка иначе оставляет в кэше
+  // огрызок, который выглядит валидным для `existsSync`.
   await mkdir(CACHE, { recursive: true });
-  await writeFile(cached, buf);
+  const tmp = `${cached}.${process.pid}.tmp`;
+  await writeFile(tmp, buf);
+  await rename(tmp, cached);
   return buf;
 }
 
@@ -222,7 +266,9 @@ async function main() {
 main().catch((err) => {
   // Падаем громко: без картинки og:image указывал бы на 404, а это хуже,
   // чем упавшая сборка. После первого успешного прогона шрифты берутся из кэша,
-  // и сборка перестаёт зависеть от сети.
+  // и сборка перестаёт зависеть от сети — но кэш локальный, на чистом раннере
+  // (`npm ci` в CI) его нет, и сборка снова пойдёт к двум зарубежным CDN.
   console.error("og: не удалось сгенерировать карточку —", err.message);
+  console.error(`og: кэш шрифтов — ${CACHE}; снести его безопасно.`);
   process.exit(1);
 });

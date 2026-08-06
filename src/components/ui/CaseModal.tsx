@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useRef } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Picture from "@/components/ui/Picture";
 import LazyVideo from "@/components/ui/LazyVideo";
 import { StackChip } from "@/components/ui/CaseCard";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
-import { caseBlockLabels, caseUiLabels } from "@/data/cases";
+import { TBD, caseBlockLabels, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
@@ -47,11 +47,12 @@ export default function CaseModal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const reduced = usePrefersReducedMotion();
-  // Медиа считаем до эффектов: без него модалка не рендерится, и блокировать
-  // прокрутку страницы нельзя — иначе кейс без обложки замораживает страницу
-  // без единого видимого диалога.
+  // Медиа может не быть: кейс заводится раньше обложки. Раскрытие от неё
+  // не зависит — текст, метрики, стек и ссылка на месте, вместо картинки
+  // пунктирный плейсхолдер. Иначе карточка объявляла бы себя кнопкой,
+  // открывающей диалог (`aria-haspopup="dialog"`), а клик не давал бы ничего.
   const media = study ? (caseMedia[study.slug] ?? null) : null;
-  const open = study !== null && media !== null;
+  const open = study !== null;
 
   /**
    * Блокировка прокрутки страницы.
@@ -174,13 +175,33 @@ export default function CaseModal({
     if (dialog && !dialog.contains(document.activeElement)) dialog.focus();
   }, [study]);
 
-  const stop = useCallback((event: ReactMouseEvent) => event.stopPropagation(), []);
+  /**
+   * Закрытие по клику мимо диалога — по паре pointerdown/pointerup, а не по click.
+   *
+   * `click` по спецификации диспатчится на общего предка целей нажатия
+   * и отпускания. Пользователь, который выделял текст внутри кейса и отпустил
+   * кнопку на поле оверлея, получал click на оверлее — `stopPropagation`
+   * на диалоге в этом случае вообще не на пути распространения. Модалка
+   * закрывалась, выделение и позиция прокрутки терялись. То же было при
+   * попытке потянуть полосу прокрутки оверлея.
+   */
+  const pressedOnOverlay = useRef(false);
+  const onPointerDown = useCallback((event: ReactPointerEvent) => {
+    pressedOnOverlay.current = event.target === event.currentTarget;
+  }, []);
+  const onPointerUp = useCallback(
+    (event: ReactPointerEvent) => {
+      if (pressedOnOverlay.current && event.target === event.currentTarget) onClose();
+      pressedOnOverlay.current = false;
+    },
+    [onClose]
+  );
 
   const timing = reduced ? { duration: 0 } : { duration: DURATION, ease: EASE };
 
   return createPortal(
     <AnimatePresence>
-      {study && media && (
+      {study && (
         <motion.div
           key="case-modal"
           // initial={false} надёжнее нулевой длительности: Framer рисует сразу
@@ -189,7 +210,8 @@ export default function CaseModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={timing}
-          onClick={onClose}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
           className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-bg/80 p-4 backdrop-blur-md md:p-10"
         >
           <motion.div
@@ -198,7 +220,6 @@ export default function CaseModal({
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            onClick={stop}
             initial={reduced ? false : { opacity: 0, scale: 0.98, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 12 }}
@@ -249,11 +270,17 @@ export default function CaseModal({
               tabIndex={0}
               className="max-h-[80svh] overflow-y-auto outline-none focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent"
             >
-              <Picture
-                image={media.cover}
-                sizes={COVER_SIZES}
-                className="aspect-[16/9] w-full border-b border-hairline object-cover"
-              />
+              {media ? (
+                <Picture
+                  image={media.cover}
+                  sizes={COVER_SIZES}
+                  className="aspect-[16/9] w-full border-b border-hairline object-cover"
+                />
+              ) : (
+                <div className="flex aspect-[16/9] w-full items-center justify-center border-b border-dashed border-hairline font-mono text-[11px] uppercase tracking-[0.16em] text-textMuted/60">
+                  {TBD}
+                </div>
+              )}
 
               <div className="px-5 py-8 md:px-8 md:py-10">
                 <h2
@@ -269,7 +296,7 @@ export default function CaseModal({
                       <div className="font-display text-2xl font-semibold text-accent md:text-3xl">
                         {metric.value}
                       </div>
-                      <div className="mt-1 font-mono text-[10px] uppercase leading-[1.3] tracking-[0.12em] text-textMuted">
+                      <div className="mt-1 break-words font-mono text-[10px] uppercase leading-[1.3] tracking-[0.12em] text-textMuted">
                         {metric.label}
                       </div>
                     </div>
@@ -295,7 +322,7 @@ export default function CaseModal({
                   ))}
                 </div>
 
-                {media.video && (
+                {media?.video && (
                   <LazyVideo
                     video={media.video}
                     scrollRootRef={scrollRef}
@@ -303,7 +330,7 @@ export default function CaseModal({
                   />
                 )}
 
-                {media.gallery && (
+                {media?.gallery && (
                   <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
                     {media.gallery.map((image) => (
                       <Picture
