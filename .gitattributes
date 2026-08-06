@@ -1,0 +1,23 @@
+# Переводы строк: в репозитории всегда LF, в рабочем дереве — как в системе.
+# Без этого на Windows с core.autocrlf=true диффы забиваются CRLF-шумом.
+* text=auto eol=lf
+
+# Бинарники — никакой нормализации. Для шрифта это не формальность:
+# assets/fonts/*.ttf лежит в git как исходник (см. assets/fonts/README.md),
+# и любая подмена байтов сделает его нечитаемым для satori. Сейчас целостность
+# держится только на автодетекте git по NUL-байтам — здесь она закреплена явно.
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.ico   binary
+*.mp4   binary
+
+# Лицензии шрифтов отдаются вместе с ними — не трогаем содержимое.
+assets/fonts/OFL.txt    -text
+assets/fonts/AUTHORS.txt -text
