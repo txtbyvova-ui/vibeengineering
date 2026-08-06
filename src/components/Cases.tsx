@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { cases, casesHeading, metaCase } from "@/data/cases";
 import { metaCaseImage } from "@/data/media";
@@ -10,7 +10,13 @@ import CasesJsonLd from "@/components/ui/CasesJsonLd";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const META_SIZES = "(min-width: 768px) 44vw, 86vw";
+/**
+ * Слот картинки мета-кейса. От md он ограничен `md:max-w-md` — это константа
+ * 448 px, а не доля вьюпорта; ниже md картинка занимает ширину секции за вычетом
+ * `px-5` и `p-8`, то есть примерно `100vw − 104px`. Прежние «44vw / 86vw»
+ * завышали слот и заставляли браузер брать из srcSet кандидат на ступень крупнее.
+ */
+const META_SIZES = "(min-width: 768px) 448px, calc(100vw - 104px)";
 
 export default function Cases() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -18,10 +24,13 @@ export default function Cases() {
   /** Какая карточка открыла модалку — на неё возвращаем фокус при закрытии. */
   const openedFrom = useRef<number | null>(null);
 
-  const open = useCallback((index: number) => {
-    openedFrom.current = index;
-    setOpenIndex(index);
-  }, []);
+  // Запоминаем открытую карточку эффектом, а не внутри апдейтера setState:
+  // апдейтер обязан быть чистым, в StrictMode React вызывает его дважды.
+  useEffect(() => {
+    if (openIndex !== null) openedFrom.current = openIndex;
+  }, [openIndex]);
+
+  const open = useCallback((index: number) => setOpenIndex(index), []);
 
   const close = useCallback(() => {
     setOpenIndex(null);
@@ -37,7 +46,6 @@ export default function Cases() {
       if (current === null) return current;
       const next = current + delta;
       if (next < 0 || next >= cases.length) return current;
-      openedFrom.current = next;
       return next;
     });
   }, []);

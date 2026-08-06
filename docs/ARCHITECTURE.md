@@ -31,7 +31,7 @@ SEO-обвязка), ветка `feat/content-v2`.
 | Стили | Tailwind CSS 3.4 + PostCSS | дизайн-токены в конфиге, примитивы в `@layer components` |
 | Анимация | Framer Motion 11 | только entry/scroll-анимации, интерактивной анимации нет |
 | Шрифты | Clash Display (Fontshare), Space Grotesk + JetBrains Mono (Google Fonts) | подключены `<link>` из `index.html`. ⚠️ см. §6.4 — кириллицу из них умеет только JetBrains Mono |
-| OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится |
+| OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится. Шрифт карточки — вендоренный JetBrains Mono из [assets/fonts/](../assets/fonts/README.md), сети не требует |
 
 Runtime-зависимостей ровно три: `react`, `react-dom`, `framer-motion`.
 Ни роутера, ни fetch-слоя, ни аналитики.
@@ -46,10 +46,17 @@ vibeengineering/
 ├── tailwind.config.js          # ЕДИНСТВЕННЫЙ источник дизайн-токенов
 ├── postcss.config.js           # tailwindcss + autoprefixer
 ├── package.json                # dev / build / preview / typecheck / lint*
+├── assets/
+│   └── fonts/                  # ТОЛЬКО шрифты, чью редистрибуцию разрешает
+│                               # лицензия: JetBrains Mono (OFL) + OFL.txt.
+│                               # Вне public/, читает только generate-og.mjs.
+│                               # Clash Display сюда класть НЕЛЬЗЯ — см. README
 ├── docs/
 │   ├── ARCHITECTURE.md         # этот файл
 │   ├── BACKLOG.md              # приоритизированные технические долги
-│   └── SPEC-hero-truss.md      # спецификация переделки Hero (реализована)
+│   ├── SPEC-hero-truss.md      # спецификация переделки Hero (реализована)
+│   ├── REPORT-cases-rail.md    # отчёт по ленте кейсов
+│   └── REPORT-multi-review-2026-08-06.md  # отчёт мульти-ревью и починки
 ├── scripts/
 │   ├── generate-og.mjs         # OG-карточка (Satori + resvg), хук prebuild
 │   ├── generate-icons.mjs      # apple-touch-icon.png из favicon.svg, хук prebuild
@@ -69,7 +76,7 @@ vibeengineering/
     ├── index.css               # @layer base + components + utilities (prefers-reduced-motion)
     ├── vite-env.d.ts
     ├── types/index.ts          # CaseStudy, TeamMember, ProcessStep, ResponsiveImage, …
-    ├── hooks/                  # useCountUp, useStructuralGrid
+    ├── hooks/                  # useCountUp, useStructuralGrid, usePrefersReducedMotion
     ├── data/                   # ВЕСЬ пользовательский текст и пути к медиа
     │   ├── hero.ts             # заголовок кусками, лид, CTA
     │   ├── heroMetrics.ts      # 3 метрики первого экрана для count-up
@@ -80,13 +87,14 @@ vibeengineering/
     │   ├── team.ts             # 2 основателя
     │   ├── contact.ts          # финальный оффер, ссылки, реквизиты футера
     │   ├── clients.ts          # 7 брендов для marquee
+    │   ├── structuralGrid.ts   # ручки Canvas-фермы Hero и маска канвы
     │   └── nav.ts              # пункты меню, логотип, кнопка Telegram
     └── components/
         ├── Nav.tsx             # fixed + mix-blend-difference, реагирует на scrollY > 24
         ├── Hero.tsx            # h1 + метрики + CTA, единственный h1 на странице
         ├── Marquee.tsx         # бесконечная лента клиентов (CSS-анимация, не JS)
         ├── USP.tsx             # 3 преимущества
-        ├── Cases.tsx           # сетка кейсов 2×N + мета-кейс
+        ├── Cases.tsx           # лента кейсов + модалка + мета-кейс
         ├── Process.tsx         # 4 этапа + блок сметы + цитата
         ├── Team.tsx            # 2 карточки основателей с портретами
         ├── Contact.tsx         # оффер, ссылки, <footer> с реквизитами
@@ -115,17 +123,22 @@ npm install
 | `npm run dev` | Vite dev-сервер, http://localhost:5173 | — |
 | `npm run typecheck` | `tsc --noEmit` | ✅ без ошибок |
 | `npm run og` | генерирует `public/og.png` | ✅ 1200×630, 43.7 kB |
-| `npm run icons` | генерирует `public/apple-touch-icon.png` | ✅ 180×180, 2.3 kB |
+| `npm run icons` | генерирует `apple-touch-icon.png` и `favicon.ico` | ✅ 180×180 / 32×32 |
 | `npm run media` | пережимает `site media/` → `public/media` | ✅ разовый, нужен ffmpeg |
 | `npm run build` | `prebuild` (og + icons) → `tsc --noEmit && vite build` | ✅ 413 модулей, ~6 с |
 | `npm run preview` | превью прод-сборки | — |
 | `npm run lint` | `eslint .` | ❌ eslint не установлен и не сконфигурирован |
 
-`prebuild` запускается npm автоматически перед `build`, поэтому `og.png`
-и `apple-touch-icon.png` всегда свежие и попадают в `dist/`. Скрипт OG тянет TTF
-шрифтов с тех же CDN, что и сайт, и кэширует их в `node_modules/.cache/og-fonts` —
-**первая** сборка на чистой машине требует сети, последующие нет. При недоступности
-CDN сборка падает громко: битый `og:image` хуже упавшего билда.
+`prebuild` запускается npm автоматически перед `build`, поэтому `og.png`,
+`favicon.ico` и `apple-touch-icon.png` всегда свежие и попадают в `dist/`.
+
+**Сеть для сборки не нужна.** Шрифт карточки — JetBrains Mono из
+[assets/fonts/](../assets/fonts/README.md): он в git (OFL 1.1 редистрибуцию
+разрешает явно) и несёт всю кириллицу и `◆`. Clash Display коммитить **запрещает
+его лицензия** (ITF FFL: «uploading them in a public server», а репозиторий
+публичный), поэтому он необязателен — берётся по Fontshare API в локальный кэш
+`.cache/og-fonts`, а при недоступности CDN латинский заголовок набирается
+JetBrains Mono и сборка продолжается. Разбор с цитатами — в README каталога.
 
 `npm run media` в `build` **не** подключён: производные закоммичены, пережимать их
 на каждой сборке незачем, а ffmpeg на CI может не быть. Запускать вручную, когда
@@ -283,7 +296,7 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 | CSS-анимации (`marquee`, `gridShift`, `pulseDot`), smooth scroll | медиаблок в `@layer utilities` [index.css](../src/index.css) |
 | Framer Motion (анимирует инлайн-стили через rAF) | `MotionConfig reducedMotion="user"` в [main.tsx](../src/main.tsx) |
 | Canvas-ферма Hero | собственная JS-проверка в `useStructuralGrid` |
-| Автоплей ролика кейса | собственная JS-проверка в [ui/LazyVideo.tsx](../src/components/ui/LazyVideo.tsx): вместо петли — постер с контролами |
+| Автоплей ролика кейса | собственная JS-проверка в [ui/LazyVideo.tsx](../src/components/ui/LazyVideo.tsx): вместо петли — постер. Контролы у плеера стоят **всегда**, независимо от настройки: ролик длиннее минуты, без механизма паузы это WCAG 2.2.2 |
 
 **Правило для нового кода:** любой новый источник движения вне CSS и Framer Motion
 обязан проверять `matchMedia('(prefers-reduced-motion: reduce)')` сам.
@@ -309,9 +322,9 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 | Задача | Что править |
 |--------|-------------|
-| Добавить кейс | `src/data/cases.ts` — новый объект `CaseStudy`. Схема жёсткая: все поля обязательны, `year` может быть `null`, `metrics` пустым быть не может. Нумерация `NN / total` считается сама. Чего не хватает — вписать в `caseDataGaps`, а не выдумать. Медиа — отдельно, см. следующую строку. |
+| Добавить кейс | `src/data/cases.ts` — новый объект `CaseStudy`. Медиа заводится **отдельным шагом**, и промежуток между двумя правками безопасен: `caseMedia` объявлен как `Record<string, CaseMedia \| undefined>`, карточка без обложки рисует пунктирный плейсхолдер, а не роняет страницу. Раньше ронял — см. [REPORT-multi-review-2026-08-06.md](REPORT-multi-review-2026-08-06.md) §3.1. Схема жёсткая: все поля обязательны, `year` может быть `null`, `metrics` пустым быть не может. Нумерация `NN / total` считается сама. Чего не хватает — вписать в `caseDataGaps`, а не выдумать. Медиа — отдельно, см. следующую строку. |
 | Добавить медиа кейсу | положить оригинал в `site media/`, прописать его в `scripts/optimize-media.mjs`, прогнать `npm run media`, затем описать в `src/data/media.ts` (ключ = `slug` кейса). Интринсики брать из вывода скрипта, alt писать осмысленный. |
-| Добавить участника | `src/data/team.ts`. ⚠️ Вёрстка Team рассчитана ровно на 2 карточки (`md:first:border-r md:last:pr-0`) — третья сломает бордеры. |
+| Добавить участника | `src/data/team.ts` + портрет в `teamPhotos` (`src/data/media.ts`). Бордеры на `md:odd:`/`md:even:` — третья карточка сетку не сломает; без портрета секция тоже не упадёт, фото просто не отрисуется. |
 | Добавить шаг методологии | `src/data/process.ts` — `num` задаётся вручную строкой. |
 | Добавить клиента в ленту | `src/data/clients.ts` — дублирование списка для петли делает `Marquee` сам. |
 | Поменять акцентный цвет | `tailwind.config.js` (`colors.accent`) **и** `src/index.css` (`--accent`) **и** `index.html` (`theme-color`, если меняется фон). |

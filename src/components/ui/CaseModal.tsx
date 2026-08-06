@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useRef } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Picture from "@/components/ui/Picture";
 import LazyVideo from "@/components/ui/LazyVideo";
 import { StackChip } from "@/components/ui/CaseCard";
 import usePrefersReducedMotion from "@/hooks/usePrefersReducedMotion";
-import { caseBlockLabels } from "@/data/cases";
+import { TBD, caseBlockLabels, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
@@ -47,6 +47,11 @@ export default function CaseModal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const reduced = usePrefersReducedMotion();
+  // Медиа может не быть: кейс заводится раньше обложки. Раскрытие от неё
+  // не зависит — текст, метрики, стек и ссылка на месте, вместо картинки
+  // пунктирный плейсхолдер. Иначе карточка объявляла бы себя кнопкой,
+  // открывающей диалог (`aria-haspopup="dialog"`), а клик не давал бы ничего.
+  const media = study ? (caseMedia[study.slug] ?? null) : null;
   const open = study !== null;
 
   /**
@@ -100,11 +105,24 @@ export default function CaseModal({
         onClose();
         return;
       }
-      if (event.key === "ArrowLeft" && hasPrev) {
+      // У плеера ролика стрелки — перемотка. Перехватывать их под ним нельзя:
+      // пользователь метит в кадр, а получает соседний кейс.
+      // Модификаторы тоже не наши: Alt+← у браузера — «назад» по истории,
+      // а без preventDefault срабатывало бы и переключение кейса, и уход
+      // со страницы вместе с ним.
+      const plainArrow =
+        !(event.target instanceof HTMLMediaElement) &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey;
+      if (event.key === "ArrowLeft" && hasPrev && plainArrow) {
+        event.preventDefault();
         onPrev();
         return;
       }
-      if (event.key === "ArrowRight" && hasNext) {
+      if (event.key === "ArrowRight" && hasNext && plainArrow) {
+        event.preventDefault();
         onNext();
         return;
       }
@@ -116,10 +134,20 @@ export default function CaseModal({
       const last = nodes[nodes.length - 1];
       const active = document.activeElement;
 
-      if (event.shiftKey && (active === first || !dialogRef.current?.contains(active))) {
+      // Три положения, из которых штатный Tab уводил фокус за оверлей:
+      //   • фокус в <body> — так его роняет кнопка стрелки, ставшая disabled
+      //     после переключения кейса (браузер снимает фокус по спецификации);
+      //   • фокус на самой оболочке диалога (tabIndex=-1) — это состояние сразу
+      //     после открытия, и Shift+Tab из него уходил назад по документу,
+      //     а портал лежит последним ребёнком body, то есть на почту в футере;
+      //   • фокус на краю списка — классический случай.
+      const container = dialogRef.current;
+      const outside = !container?.contains(active);
+      const atStart = active === first || active === container;
+      if (event.shiftKey && (atStart || outside)) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && active === last) {
+      } else if (!event.shiftKey && (active === last || outside)) {
         event.preventDefault();
         first.focus();
       }
@@ -137,18 +165,43 @@ export default function CaseModal({
   }, [open]);
 
   // При переключении кейса стрелками прокрутка модалки должна начинаться сверху.
+  // Заодно подбираем фокус: дойдя стрелкой до крайнего кейса, пользователь
+  // нажимает кнопку, которая тут же становится disabled, — браузер по
+  // спецификации снимает с неё фокус и отдаёт его <body>, то есть наружу диалога.
   useEffect(() => {
-    if (study) scrollRef.current?.scrollTo({ top: 0 });
+    if (!study) return;
+    scrollRef.current?.scrollTo({ top: 0 });
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.contains(document.activeElement)) dialog.focus();
   }, [study]);
 
-  const stop = useCallback((event: ReactMouseEvent) => event.stopPropagation(), []);
+  /**
+   * Закрытие по клику мимо диалога — по паре pointerdown/pointerup, а не по click.
+   *
+   * `click` по спецификации диспатчится на общего предка целей нажатия
+   * и отпускания. Пользователь, который выделял текст внутри кейса и отпустил
+   * кнопку на поле оверлея, получал click на оверлее — `stopPropagation`
+   * на диалоге в этом случае вообще не на пути распространения. Модалка
+   * закрывалась, выделение и позиция прокрутки терялись. То же было при
+   * попытке потянуть полосу прокрутки оверлея.
+   */
+  const pressedOnOverlay = useRef(false);
+  const onPointerDown = useCallback((event: ReactPointerEvent) => {
+    pressedOnOverlay.current = event.target === event.currentTarget;
+  }, []);
+  const onPointerUp = useCallback(
+    (event: ReactPointerEvent) => {
+      if (pressedOnOverlay.current && event.target === event.currentTarget) onClose();
+      pressedOnOverlay.current = false;
+    },
+    [onClose]
+  );
 
-  const media = study ? caseMedia[study.slug] : null;
   const timing = reduced ? { duration: 0 } : { duration: DURATION, ease: EASE };
 
   return createPortal(
     <AnimatePresence>
-      {study && media && (
+      {study && (
         <motion.div
           key="case-modal"
           // initial={false} надёжнее нулевой длительности: Framer рисует сразу
@@ -157,7 +210,8 @@ export default function CaseModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={timing}
-          onClick={onClose}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
           className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-bg/80 p-4 backdrop-blur-md md:p-10"
         >
           <motion.div
@@ -166,7 +220,6 @@ export default function CaseModal({
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            onClick={stop}
             initial={reduced ? false : { opacity: 0, scale: 0.98, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 12 }}
@@ -185,7 +238,7 @@ export default function CaseModal({
                   type="button"
                   onClick={onPrev}
                   disabled={!hasPrev}
-                  aria-label="Предыдущий кейс"
+                  aria-label={caseUiLabels.modalPrev}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>←</span>
@@ -194,7 +247,7 @@ export default function CaseModal({
                   type="button"
                   onClick={onNext}
                   disabled={!hasNext}
-                  aria-label="Следующий кейс"
+                  aria-label={caseUiLabels.modalNext}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>→</span>
@@ -202,7 +255,7 @@ export default function CaseModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Закрыть кейс"
+                  aria-label={caseUiLabels.modalClose}
                   className="flex h-9 w-9 items-center justify-center border border-hairline font-mono text-sm text-textMain transition-colors duration-300 hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   <span aria-hidden>×</span>
@@ -217,11 +270,17 @@ export default function CaseModal({
               tabIndex={0}
               className="max-h-[80svh] overflow-y-auto outline-none focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-accent"
             >
-              <Picture
-                image={media.cover}
-                sizes={COVER_SIZES}
-                className="aspect-[16/9] w-full border-b border-hairline object-cover"
-              />
+              {media ? (
+                <Picture
+                  image={media.cover}
+                  sizes={COVER_SIZES}
+                  className="aspect-[16/9] w-full border-b border-hairline object-cover"
+                />
+              ) : (
+                <div className="flex aspect-[16/9] w-full items-center justify-center border-b border-dashed border-hairline font-mono text-[11px] uppercase tracking-[0.16em] text-textMuted/60">
+                  {TBD}
+                </div>
+              )}
 
               <div className="px-5 py-8 md:px-8 md:py-10">
                 <h2
@@ -237,7 +296,7 @@ export default function CaseModal({
                       <div className="font-display text-2xl font-semibold text-accent md:text-3xl">
                         {metric.value}
                       </div>
-                      <div className="mt-1 font-mono text-[10px] uppercase leading-[1.3] tracking-[0.12em] text-textMuted">
+                      <div className="mt-1 break-words font-mono text-[10px] uppercase leading-[1.3] tracking-[0.12em] text-textMuted">
                         {metric.label}
                       </div>
                     </div>
@@ -263,14 +322,15 @@ export default function CaseModal({
                   ))}
                 </div>
 
-                {media.video && (
+                {media?.video && (
                   <LazyVideo
                     video={media.video}
+                    scrollRootRef={scrollRef}
                     className="mt-8 aspect-[16/9] w-full border border-hairline object-cover"
                   />
                 )}
 
-                {media.gallery && (
+                {media?.gallery && (
                   <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
                     {media.gallery.map((image) => (
                       <Picture

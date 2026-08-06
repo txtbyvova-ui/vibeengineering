@@ -1,11 +1,16 @@
-import { forwardRef } from "react";
+import { forwardRef, memo, useRef } from "react";
 import Picture from "@/components/ui/Picture";
-import { TBD } from "@/data/cases";
+import { TBD, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
 import type { CaseStudy } from "@/types";
 
-/** Карточка занимает 85vw ниже sm — так виден край следующей и лента читается как лента. */
-const COVER_SIZES = "(min-width: 768px) 26rem, 85vw";
+/**
+ * Ширина слота по брейкпоинтам ленты: 85vw ниже sm (виден край следующей
+ * карточки — лента читается как лента), 24rem на sm, 26rem от md.
+ * Пропуск среднего диапазона стоил бы завышенного кандидата из srcSet
+ * на 640–767 px, причём у обложек, которые грузятся `eager`.
+ */
+const COVER_SIZES = "(min-width: 768px) 26rem, (min-width: 640px) 24rem, 85vw";
 
 interface CaseCardProps {
   study: CaseStudy;
@@ -18,29 +23,52 @@ interface CaseCardProps {
   onFocus: (el: HTMLElement) => void;
 }
 
+/**
+ * Карточка кейса.
+ *
+ * Раньше вся карточка была одним `<button>`, а внутри лежали `<h3>`, `<p>`
+ * и десяток `<div>` — модель содержимого кнопки допускает только phrasing
+ * content, так что разметка была невалидной, а заголовок кейса не работал
+ * заголовком: в список заголовков скринридера карточки не попадали вовсе.
+ *
+ * Теперь это `<article>` с настоящим `h3`, а кнопка — компактная, «Смотреть
+ * кейс». Кликабельность всей площади при этом сохранена приёмом stretched
+ * link: `::after` кнопки растянут на карточку (`relative` на article).
+ * Выделять текст в карточке по-прежнему нельзя — но нельзя было и раньше,
+ * когда карточка целиком была кнопкой, так что это не регресс.
+ *
+ * Кольцо фокуса рисуется вокруг ВСЕЙ карточки через `has-[:focus-visible]`,
+ * иначе с клавиатуры подсвечивалась бы одна строчка внизу. Собственное кольцо
+ * кнопки оставлено как запасной вариант для браузеров без `:has()`.
+ */
 const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
   { study, index, total, eager, onOpen, onFocus },
   ref
 ) {
   const media = caseMedia[study.slug];
+  const articleRef = useRef<HTMLElement>(null);
 
   return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onOpen}
-      onFocus={(event) => onFocus(event.currentTarget)}
-      aria-haspopup="dialog"
+    <article
+      ref={articleRef}
       // Ширина и snap живут на <li> в ленте — здесь карточка просто растягивается
       // на слот, чтобы все были одной высоты.
-      className="group flex h-full w-full flex-col border border-hairline bg-bg text-left transition-colors duration-500 ease-premium hover:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="group relative flex h-full w-full flex-col border border-hairline bg-bg text-left transition-colors duration-500 ease-premium hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
     >
-      <Picture
-        image={media.cover}
-        sizes={COVER_SIZES}
-        eager={eager}
-        className="aspect-[16/10] w-full border-b border-hairline object-cover"
-      />
+      {/* Обложки может не быть: кейс заводится раньше медиа. Пробел показываем
+          пунктиром — как чип стека, а не роняем всё приложение. */}
+      {media ? (
+        <Picture
+          image={media.cover}
+          sizes={COVER_SIZES}
+          eager={eager}
+          className="aspect-[16/10] w-full border-b border-hairline object-cover"
+        />
+      ) : (
+        <div className="flex aspect-[16/10] w-full items-center justify-center border-b border-dashed border-hairline font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted/60">
+          {TBD}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-6">
         <div className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted">
@@ -73,23 +101,40 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
               <div className="font-display text-xl font-semibold text-accent">
                 {metric.value}
               </div>
-              <div className="mt-1 font-mono text-[9px] uppercase leading-[1.3] tracking-[0.1em] text-textMuted">
+              {/* break-words: «собеседований» при tracking шире своей трети
+                  на 320 px — см. ту же правку в HeroMetrics. */}
+              <div className="mt-1 break-words font-mono text-[9px] uppercase leading-[1.3] tracking-[0.1em] text-textMuted">
                 {metric.label}
               </div>
             </div>
           ))}
         </div>
 
-        <span className="mt-5 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 group-hover:text-accent">
-          Смотреть кейс
+        <button
+          ref={ref}
+          type="button"
+          onClick={onOpen}
+          // Ленте нужен бокс всей карточки, а не кнопки: иначе `keepInView`
+          // подтягивал бы в кадр одну строку, оставляя карточку за краем.
+          onFocus={(event) => onFocus(articleRef.current ?? event.currentTarget)}
+          aria-haspopup="dialog"
+          // Имя всё равно нужно явное: сама по себе подпись «Смотреть кейс»
+          // одинакова у всех четырёх карточек, и в списке кнопок скринридера
+          // они стали бы неразличимы.
+          aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
+          className="mt-5 inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 after:absolute after:inset-0 after:content-[''] group-hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {caseUiLabels.open}
           <span aria-hidden>→</span>
-        </span>
+        </button>
       </div>
-    </button>
+    </article>
   );
 });
 
-export default CaseCard;
+// memo не украшение: лента перерисовывается на каждое событие scroll (индикатор
+// прогресса — состояние), а карточка тянет за собой <picture> с тремя srcSet.
+export default memo(CaseCard);
 
 /** Чип стека. Плейсхолдер рисуем пунктиром — пробел должен быть виден. */
 export function StackChip({ label }: { label: string }) {

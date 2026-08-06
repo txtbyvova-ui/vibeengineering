@@ -43,14 +43,23 @@ npm install
 | `npm run dev` | dev-сервер на http://localhost:5173 | рабочая |
 | `npm run typecheck` | `tsc --noEmit` | рабочая, проходит чисто |
 | `npm run og` | генерация `public/og.png` (Satori + resvg) | рабочая, ~2 с |
-| `npm run icons` | генерация `public/apple-touch-icon.png` из `favicon.svg` | рабочая |
+| `npm run icons` | генерация `public/apple-touch-icon.png` и `favicon.ico` из `favicon.svg` | рабочая |
 | `npm run media` | пережатие `site media/` → `public/media` (ffmpeg) | рабочая, **разовая** — в `build` не подключена |
 | `npm run build` | `prebuild` (og + icons) → `tsc --noEmit && vite build` | рабочая, ~6 с |
 | `npm run preview` | превью прод-сборки | рабочая |
 | `npm run lint` | `eslint .` | **сломана** — eslint не установлен и не сконфигурирован |
 
-Первая сборка на чистой машине требует сети (скрипт OG тянет TTF с CDN шрифтов
-и кэширует в `node_modules/.cache`). Дальше сборка офлайн-способна.
+**Сборка не зависит от сети.** JetBrains Mono лежит в git
+([assets/fonts/](assets/fonts/README.md), OFL 1.1 разрешает редистрибуцию явно)
+и читается с диска — он несёт всю кириллицу и `◆` OG-карточки.
+
+Clash Display закоммитить **нельзя**: ITF Free Font License запрещает
+«uploading them in a public server», а репозиторий публичный (разбор с цитатой —
+в том же README). Поэтому он необязателен: скрипт берёт его по Fontshare API
+(штатный путь доставки по той же лицензии) и кладёт в `.cache/og-fonts` вне git,
+а **при недоступности CDN не падает** — латинский заголовок набирается
+JetBrains Mono, карточка собирается, в лог уходит предупреждение.
+Раньше отказ CDN ронял `prebuild` и вместе с ним весь деплой.
 
 ## 4. Гейт перед словом «готово»
 
@@ -128,8 +137,11 @@ rag index --root .
 rag query "marquee infinite scroll" --root . --top-k 5
 ```
 
-Конфиг — [tools/rag.config.json](tools/rag.config.json) (`maxFileBytes: 65536`, чтобы
-`package-lock.json` не засорял выдачу). Индекс `.rag/` самоигнорируется, в git не идёт.
+Конфиг — [tools/rag.config.json](tools/rag.config.json) (`maxFileBytes: 90000`, чтобы
+`package-lock.json` — 111 КБ — не засорял выдачу, но самый крупный документ репозитория,
+`docs/SPEC-hero-truss.md` на 68 КБ, в индекс попадал). Здесь и в MEMORY значилось
+`65536` — при таком пороге спека молча выпала бы из индекса; число исправлено 2026-08-06
+по факту файла. Индекс `.rag/` самоигнорируется, в git не идёт.
 Пересобирать после заметных правок исходников.
 
 ## 9. Память

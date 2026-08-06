@@ -69,8 +69,6 @@ export interface ResponsiveImage {
   alt: string;
   /** Утилита object-position, если центр кадра — не то, что надо показать. */
   position?: string;
-  /** Утилита aspect-*, если пропорция кадра отличается от дефолта слота. */
-  aspect?: string;
 }
 
 /** Видео кейса: `{base}.mp4` + `{base}.poster.jpg`. */

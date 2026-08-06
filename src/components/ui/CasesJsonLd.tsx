@@ -1,4 +1,4 @@
-import { cases } from "@/data/cases";
+import { TBD, cases, casesListName } from "@/data/cases";
 
 const ORIGIN = "https://vibeengineering.ru";
 
@@ -17,26 +17,32 @@ export default function CasesJsonLd() {
   const payload = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Избранные кейсы Vibe Engineering",
+    name: casesListName,
     itemListOrder: "https://schema.org/ItemListOrderAscending",
     numberOfItems: cases.length,
-    itemListElement: cases.map((study, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      item: {
-        "@type": "CreativeWork",
-        "@id": `${ORIGIN}/#case-${study.slug}`,
-        name: study.title,
-        genre: study.tag,
-        abstract: study.problem,
-        description: `${study.solution} ${study.result}`,
-        keywords: study.stack.join(", "),
-        ...(study.year !== null && { datePublished: String(study.year) }),
-        creator: { "@id": `${ORIGIN}/#organization` },
-        about: { "@type": "Organization", name: study.client },
-        ...(study.link && { url: study.link.href }),
-      },
-    })),
+    itemListElement: cases.map((study, i) => {
+      // Плейсхолдер незаполненного факта — подпись для человека, а не технология.
+      // В машинно-читаемых данных «уточняется» превратилось бы в настоящий
+      // keyword у трёх кейсов из четырёх.
+      const stack = study.stack.filter((item) => item !== TBD);
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "CreativeWork",
+          "@id": `${ORIGIN}/#case-${study.slug}`,
+          name: study.title,
+          genre: study.tag,
+          abstract: study.problem,
+          description: `${study.solution} ${study.result}`,
+          ...(stack.length > 0 && { keywords: stack.join(", ") }),
+          ...(study.year !== null && { datePublished: String(study.year) }),
+          creator: { "@id": `${ORIGIN}/#organization` },
+          about: { "@type": "Organization", name: study.client },
+          ...(study.link && { url: study.link.href }),
+        },
+      };
+    }),
   };
 
   return (
