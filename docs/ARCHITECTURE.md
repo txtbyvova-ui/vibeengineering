@@ -31,7 +31,7 @@ SEO-обвязка), ветка `feat/content-v2`.
 | Стили | Tailwind CSS 3.4 + PostCSS | дизайн-токены в конфиге, примитивы в `@layer components` |
 | Анимация | Framer Motion 11 | только entry/scroll-анимации, интерактивной анимации нет |
 | Шрифты | Clash Display (Fontshare), Space Grotesk + JetBrains Mono (Google Fonts) | подключены `<link>` из `index.html`. ⚠️ см. §6.4 — кириллицу из них умеет только JetBrains Mono |
-| OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится |
+| OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится. Шрифт карточки — вендоренный JetBrains Mono из [assets/fonts/](../assets/fonts/README.md), сети не требует |
 
 Runtime-зависимостей ровно три: `react`, `react-dom`, `framer-motion`.
 Ни роутера, ни fetch-слоя, ни аналитики.
@@ -46,6 +46,11 @@ vibeengineering/
 ├── tailwind.config.js          # ЕДИНСТВЕННЫЙ источник дизайн-токенов
 ├── postcss.config.js           # tailwindcss + autoprefixer
 ├── package.json                # dev / build / preview / typecheck / lint*
+├── assets/
+│   └── fonts/                  # ТОЛЬКО шрифты, чью редистрибуцию разрешает
+│                               # лицензия: JetBrains Mono (OFL) + OFL.txt.
+│                               # Вне public/, читает только generate-og.mjs.
+│                               # Clash Display сюда класть НЕЛЬЗЯ — см. README
 ├── docs/
 │   ├── ARCHITECTURE.md         # этот файл
 │   ├── BACKLOG.md              # приоритизированные технические долги
@@ -118,17 +123,22 @@ npm install
 | `npm run dev` | Vite dev-сервер, http://localhost:5173 | — |
 | `npm run typecheck` | `tsc --noEmit` | ✅ без ошибок |
 | `npm run og` | генерирует `public/og.png` | ✅ 1200×630, 43.7 kB |
-| `npm run icons` | генерирует `public/apple-touch-icon.png` | ✅ 180×180, 2.3 kB |
+| `npm run icons` | генерирует `apple-touch-icon.png` и `favicon.ico` | ✅ 180×180 / 32×32 |
 | `npm run media` | пережимает `site media/` → `public/media` | ✅ разовый, нужен ffmpeg |
 | `npm run build` | `prebuild` (og + icons) → `tsc --noEmit && vite build` | ✅ 413 модулей, ~6 с |
 | `npm run preview` | превью прод-сборки | — |
 | `npm run lint` | `eslint .` | ❌ eslint не установлен и не сконфигурирован |
 
-`prebuild` запускается npm автоматически перед `build`, поэтому `og.png`
-и `apple-touch-icon.png` всегда свежие и попадают в `dist/`. Скрипт OG тянет TTF
-шрифтов с тех же CDN, что и сайт, и кэширует их в `node_modules/.cache/og-fonts` —
-**первая** сборка на чистой машине требует сети, последующие нет. При недоступности
-CDN сборка падает громко: битый `og:image` хуже упавшего билда.
+`prebuild` запускается npm автоматически перед `build`, поэтому `og.png`,
+`favicon.ico` и `apple-touch-icon.png` всегда свежие и попадают в `dist/`.
+
+**Сеть для сборки не нужна.** Шрифт карточки — JetBrains Mono из
+[assets/fonts/](../assets/fonts/README.md): он в git (OFL 1.1 редистрибуцию
+разрешает явно) и несёт всю кириллицу и `◆`. Clash Display коммитить **запрещает
+его лицензия** (ITF FFL: «uploading them in a public server», а репозиторий
+публичный), поэтому он необязателен — берётся по Fontshare API в локальный кэш
+`.cache/og-fonts`, а при недоступности CDN латинский заголовок набирается
+JetBrains Mono и сборка продолжается. Разбор с цитатами — в README каталога.
 
 `npm run media` в `build` **не** подключён: производные закоммичены, пережимать их
 на каждой сборке незачем, а ffmpeg на CI может не быть. Запускать вручную, когда
