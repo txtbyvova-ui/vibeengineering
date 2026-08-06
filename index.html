@@ -11,9 +11,8 @@
     />
     <link rel="canonical" href="https://vibeengineering.ru/" />
 
-    <!-- Иконки: SVG в git как исходник, растры собираются в prebuild.
-         favicon.ico — для клиентов без поддержки SVG-иконки: они по умолчанию
-         идут на /favicon.ico и получали там 404. -->
+    <!-- Иконки: SVG — исходник, растры собираются в prebuild.
+         favicon.ico нужен клиентам без поддержки SVG-иконки. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" sizes="32x32" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -52,14 +51,8 @@
     />
     <meta name="twitter:image" content="https://vibeengineering.ru/og.png" />
 
-    <!--
-      Fonts: preconnect + preload.
-      Хостов у каждого CDN два, и режим соединения у них разный: CSS тянется
-      обычным запросом (api.fontshare.com, fonts.googleapis.com — без crossorigin),
-      woff2 — анонимным CORS (cdn.fontshare.com, fonts.gstatic.com — с crossorigin).
-      Прогрев в неверном режиме соединение не переиспользует, а cdn.fontshare.com
-      до 2026-08-06 не прогревался вовсе — при том что именно оттуда едут байты.
-    -->
+    <!-- Fonts. У каждого CDN два хоста с разным режимом соединения: CSS — без
+         crossorigin, woff2 — с ним. Прогрев в неверном режиме бесполезен. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.fontshare.com" />
@@ -78,17 +71,8 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
 
-    <!--
-      JSON-LD. Organization и LocalBusiness — один и тот же субъект, поэтому это
-      ОДИН узел с массивом @type, а не два узла в иерархии. Прежняя связка через
-      `parentOrganization` утверждала обратное: что это родительская компания
-      и её дочернее подразделение.
-
-      В sameAs — только профили, принадлежность которых владельцу подтверждена.
-      Ответ 200 таким подтверждением НЕ является: t.me отдаёт 200 на любой
-      несуществующий юзернейм, а github.com/vibeengineering оказался посторонней
-      организацией «VibeEngineering.ai» (проверено через GitHub API 2026-08-06).
-    -->
+    <!-- JSON-LD: один узел с массивом @type (Organization и LocalBusiness —
+         это один субъект). Правила для sameAs — docs/BACKLOG.md §9. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
