@@ -15,5 +15,5 @@ export const navBrand = {
 
 export const navCta: Link = {
   label: "Telegram ↗",
-  href: "https://t.me/vibeengineering",
+  href: "https://t.me/vovaegorovv",
 };

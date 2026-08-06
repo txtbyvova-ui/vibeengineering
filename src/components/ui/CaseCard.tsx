@@ -14,8 +14,6 @@ const COVER_SIZES = "(min-width: 768px) 26rem, (min-width: 640px) 24rem, 85vw";
 
 interface CaseCardProps {
   study: CaseStudy;
-  index: number;
-  total: number;
   /** Первые две обложки грузим сразу — они попадают в кадр вместе с секцией. */
   eager: boolean;
   onOpen: () => void;
@@ -24,25 +22,21 @@ interface CaseCardProps {
 }
 
 /**
- * Карточка кейса.
+ * Карточка кейса — ТИЗЕР. На ленте видно ровно четыре вещи: обложка, клиент,
+ * заголовок в одну строку и мелкая строка «тег · год». Ни задачи, ни решения,
+ * ни результата, ни метрик, ни стека здесь нет — и не «скрыто через CSS»,
+ * а не отрендерено вовсе. Весь контент кейса живёт только в модалке.
  *
- * Раньше вся карточка была одним `<button>`, а внутри лежали `<h3>`, `<p>`
- * и десяток `<div>` — модель содержимого кнопки допускает только phrasing
- * content, так что разметка была невалидной, а заголовок кейса не работал
- * заголовком: в список заголовков скринридера карточки не попадали вовсе.
- *
- * Теперь это `<article>` с настоящим `h3`, а кнопка — компактная, «Смотреть
- * кейс». Кликабельность всей площади при этом сохранена приёмом stretched
- * link: `::after` кнопки растянут на карточку (`relative` на article).
- * Выделять текст в карточке по-прежнему нельзя — но нельзя было и раньше,
- * когда карточка целиком была кнопкой, так что это не регресс.
- *
- * Кольцо фокуса рисуется вокруг ВСЕЙ карточки через `has-[:focus-visible]`,
- * иначе с клавиатуры подсвечивалась бы одна строчка внизу. Собственное кольцо
- * кнопки оставлено как запасной вариант для браузеров без `:has()`.
+ * Карточка — `<article>` с настоящим `h3`, а не один большой `<button>`:
+ * модель содержимого кнопки допускает только phrasing content, а `h3` и `div`
+ * ею не являются. Кликабельность всей площади даёт прозрачная кнопка-оверлей
+ * `absolute inset-0` — у неё нет видимого текста, только `aria-label`, поэтому
+ * на карточке по-прежнему «ничего больше». Она же приносит `cursor: pointer`
+ * на всю площадь (preflight Tailwind ставит его любому `button`) и кольцо
+ * фокуса по контуру карточки.
  */
 const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
-  { study, index, total, eager, onOpen, onFocus },
+  { study, eager, onOpen, onFocus },
   ref
 ) {
   const media = caseMedia[study.slug];
@@ -71,63 +65,33 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
       )}
 
       <div className="flex flex-1 flex-col p-6">
-        <div className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted">
-          <span>
-            {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-          </span>
-          <span className="flex items-center gap-3">
-            <span className="border border-hairline px-2 py-1">{study.tag}</span>
-            <span>{study.year ?? "—"}</span>
-          </span>
-        </div>
-
-        <p className="mt-6 font-mono text-xs uppercase tracking-[0.16em] text-accent">
+        <p className="font-mono text-xs uppercase tracking-[0.16em] text-accent">
           {study.client}
         </p>
 
-        {/* Ровно две строки: иначе карточки разъезжаются по высоте. */}
-        <h3 className="mt-3 line-clamp-2 min-h-[2.6em] font-display text-xl font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent md:text-2xl">
+        {/* Ровно одна строка: карточка — тизер, полный заголовок в модалке. */}
+        <h3 className="mt-3 line-clamp-1 font-display text-xl font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent md:text-2xl">
           {study.title}
         </h3>
 
-        {/* Ниже md строка короче, поэтому тот же текст занимает на строку больше */}
-        <p className="mt-4 line-clamp-4 min-h-[6em] text-sm leading-[1.5] text-textMuted md:line-clamp-3 md:min-h-[4.5em]">
-          {study.problem}
+        <p className="mt-auto pt-6 font-mono text-[10px] uppercase tracking-[0.14em] text-textMuted">
+          {study.tag} · {study.year ?? "—"}
         </p>
-
-        <div className="mt-auto grid grid-cols-3 gap-2 border-t border-hairline pt-5">
-          {study.metrics.map((metric) => (
-            <div key={metric.label}>
-              <div className="font-display text-xl font-semibold text-accent">
-                {metric.value}
-              </div>
-              {/* break-words: «собеседований» при tracking шире своей трети
-                  на 320 px — см. ту же правку в HeroMetrics. */}
-              <div className="mt-1 break-words font-mono text-[9px] uppercase leading-[1.3] tracking-[0.1em] text-textMuted">
-                {metric.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <button
-          ref={ref}
-          type="button"
-          onClick={onOpen}
-          // Ленте нужен бокс всей карточки, а не кнопки: иначе `keepInView`
-          // подтягивал бы в кадр одну строку, оставляя карточку за краем.
-          onFocus={(event) => onFocus(articleRef.current ?? event.currentTarget)}
-          aria-haspopup="dialog"
-          // Имя всё равно нужно явное: сама по себе подпись «Смотреть кейс»
-          // одинакова у всех четырёх карточек, и в списке кнопок скринридера
-          // они стали бы неразличимы.
-          aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
-          className="mt-5 inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 after:absolute after:inset-0 after:content-[''] group-hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          {caseUiLabels.open}
-          <span aria-hidden>→</span>
-        </button>
       </div>
+
+      {/* Кнопка-оверлей: ничего не показывает, но делает кликабельной всю
+          карточку, даёт ей cursor: pointer и кольцо фокуса по контуру. */}
+      <button
+        ref={ref}
+        type="button"
+        onClick={onOpen}
+        // Ленте нужен бокс всей карточки: иначе `keepInView` подтягивал бы
+        // в кадр кнопку, оставляя карточку за краем.
+        onFocus={(event) => onFocus(articleRef.current ?? event.currentTarget)}
+        aria-haspopup="dialog"
+        aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
+        className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      />
     </article>
   );
 });

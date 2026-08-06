@@ -228,8 +228,6 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
               <CaseCard
                 ref={cardHandlers[i].ref}
                 study={study}
-                index={i}
-                total={studies.length}
                 eager={i < EAGER_COUNT}
                 onOpen={cardHandlers[i].open}
                 onFocus={keepInView}

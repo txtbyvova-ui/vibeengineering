@@ -16,8 +16,11 @@
   Remote — `https://github.com/txtbyvova-ui/vibeengineering.git` (владелец аккаунта — не Roman;
   **не пушить без явного разрешения**).
 - **2026-08-05.** Продукт: лендинг бюро «Vibe Engineering» (Владимир Егоров — Creative Producer,
-  Роман Петров — Technical Director). Конверсионная цель — переход в Telegram `@vibeengineering`
+  Роман Петров — Technical Director). Конверсионная цель — переход в Telegram
   или на `hq@vibeengineering.ru`. Формы и бэкенда нет намеренно.
+  **SUPERSEDED 2026-08-07:** Telegram был `@vibeengineering`, стал `@vovaegorovv`
+  (распоряжение владельца). Живут контакты в `src/data/contact.ts` и `src/data/nav.ts`,
+  плюс `sameAs` в `index.html` — менять все три места разом.
 
 ## Проверенные состояния (замер 2026-08-05)
 
