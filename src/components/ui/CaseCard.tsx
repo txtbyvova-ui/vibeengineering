@@ -1,4 +1,4 @@
-import { forwardRef, memo } from "react";
+import { forwardRef, memo, useRef } from "react";
 import Picture from "@/components/ui/Picture";
 import { TBD, caseUiLabels } from "@/data/cases";
 import { caseMedia } from "@/data/media";
@@ -23,26 +23,37 @@ interface CaseCardProps {
   onFocus: (el: HTMLElement) => void;
 }
 
+/**
+ * Карточка кейса.
+ *
+ * Раньше вся карточка была одним `<button>`, а внутри лежали `<h3>`, `<p>`
+ * и десяток `<div>` — модель содержимого кнопки допускает только phrasing
+ * content, так что разметка была невалидной, а заголовок кейса не работал
+ * заголовком: в список заголовков скринридера карточки не попадали вовсе.
+ *
+ * Теперь это `<article>` с настоящим `h3`, а кнопка — компактная, «Смотреть
+ * кейс». Кликабельность всей площади при этом сохранена приёмом stretched
+ * link: `::after` кнопки растянут на карточку (`relative` на article).
+ * Выделять текст в карточке по-прежнему нельзя — но нельзя было и раньше,
+ * когда карточка целиком была кнопкой, так что это не регресс.
+ *
+ * Кольцо фокуса рисуется вокруг ВСЕЙ карточки через `has-[:focus-visible]`,
+ * иначе с клавиатуры подсвечивалась бы одна строчка внизу. Собственное кольцо
+ * кнопки оставлено как запасной вариант для браузеров без `:has()`.
+ */
 const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
   { study, index, total, eager, onOpen, onFocus },
   ref
 ) {
   const media = caseMedia[study.slug];
+  const articleRef = useRef<HTMLElement>(null);
 
   return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onOpen}
-      onFocus={(event) => onFocus(event.currentTarget)}
-      aria-haspopup="dialog"
-      // Без явного имени скринридер зачитывает как подпись кнопки всю карточку
-      // целиком — 243 символа вместе с метриками (замерено). Внутренности при
-      // этом остаются в DOM: их читает виртуальный курсор, а не метка кнопки.
-      aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
+    <article
+      ref={articleRef}
       // Ширина и snap живут на <li> в ленте — здесь карточка просто растягивается
       // на слот, чтобы все были одной высоты.
-      className="group flex h-full w-full flex-col border border-hairline bg-bg text-left transition-colors duration-500 ease-premium hover:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="group relative flex h-full w-full flex-col border border-hairline bg-bg text-left transition-colors duration-500 ease-premium hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
     >
       {/* Обложки может не быть: кейс заводится раньше медиа. Пробел показываем
           пунктиром — как чип стека, а не роняем всё приложение. */}
@@ -99,12 +110,25 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
           ))}
         </div>
 
-        <span className="mt-5 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 group-hover:text-accent">
+        <button
+          ref={ref}
+          type="button"
+          onClick={onOpen}
+          // Ленте нужен бокс всей карточки, а не кнопки: иначе `keepInView`
+          // подтягивал бы в кадр одну строку, оставляя карточку за краем.
+          onFocus={(event) => onFocus(articleRef.current ?? event.currentTarget)}
+          aria-haspopup="dialog"
+          // Имя всё равно нужно явное: сама по себе подпись «Смотреть кейс»
+          // одинакова у всех четырёх карточек, и в списке кнопок скринридера
+          // они стали бы неразличимы.
+          aria-label={`${caseUiLabels.openAction}: ${study.client} — ${study.title}`}
+          className="mt-5 inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-textMuted transition-colors duration-300 after:absolute after:inset-0 after:content-[''] group-hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
           {caseUiLabels.open}
           <span aria-hidden>→</span>
-        </span>
+        </button>
       </div>
-    </button>
+    </article>
   );
 });
 
