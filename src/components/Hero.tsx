@@ -60,7 +60,10 @@ export default function Hero() {
                   <span key={part.text}>
                     <RevealText
                       delay={delay}
-                      className={part.accent ? "italic text-accent" : undefined}
+                      // Выделение — цветом, без курсива: у M PLUS Rounded 1c
+                      // курсивного начертания нет, а синтетический наклон
+                      // на 106 px виден как дефект.
+                      className={part.accent ? "text-accent" : undefined}
                     >
                       {part.text}
                     </RevealText>{" "}

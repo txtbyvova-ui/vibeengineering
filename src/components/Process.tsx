@@ -66,7 +66,8 @@ export default function Process() {
         </a>
       </motion.div>
 
-      <p className="mt-12 max-w-2xl font-display text-2xl italic text-textMuted md:text-3xl">
+      {/* Без italic: курсива у заголовочного шрифта нет, цитату держат кавычки */}
+      <p className="mt-12 max-w-2xl font-display text-2xl text-textMuted md:text-3xl">
         «{processQuote}»
       </p>
     </section>

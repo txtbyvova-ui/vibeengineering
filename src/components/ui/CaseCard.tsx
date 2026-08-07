@@ -70,11 +70,12 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
         </p>
 
         {/* Ровно одна строка: карточка — тизер, полный заголовок в модалке.
-            18 px до sm — не вкусовщина: ниже sm карточка занимает 85vw, и на
-            360 px (самый массовый Android) в бокс остаётся 256 px. При 20 px
-            туда влезало ~23 знака, а обрезка line-clamp молчаливая — ни в вёрстке,
-            ни в scrollWidth её не видно. Лимит длины title — в types/index.ts. */}
-        <h3 className="mt-3 line-clamp-1 font-display text-lg font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent sm:text-xl md:text-2xl">
+            17 px до sm — не вкусовщина: ниже sm карточка занимает 85vw, и на
+            320 px в бокс остаётся 222 px, а обрезка line-clamp молчаливая —
+            ни в вёрстке, ни в scrollWidth её не видно. При 18 px самый длинный
+            из утверждённых заголовков вылезал на 1 px (M PLUS Rounded 1c шире
+            прежнего системного фоллбэка). Лимит длины title — в types/index.ts. */}
+        <h3 className="mt-3 line-clamp-1 font-display text-[17px] font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent sm:text-xl md:text-2xl">
           {study.title}
         </h3>
 

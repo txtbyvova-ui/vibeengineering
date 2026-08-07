@@ -20,7 +20,9 @@ export default function HeroMetrics({ className = "" }: { className?: string }) 
     >
       {HERO_METRICS.map((metric) => (
         <div key={metric.label}>
-          <div className="font-mono text-2xl font-medium tracking-tight text-textMain md:text-4xl">
+          {/* Без font-medium: у JetBrains Mono самохостится один вес 400,
+              и запрос 500 всё равно подобрал бы его — класс бы только врал. */}
+          <div className="font-mono text-2xl tracking-tight text-textMain md:text-4xl">
             <span data-countup>{metric.value}</span>
             {metric.suffix}
           </div>

@@ -64,7 +64,7 @@ export default function Contact() {
         ))}
       </div>
 
-      <p className="mt-20 max-w-3xl font-display text-3xl italic leading-snug text-textMuted md:text-4xl">
+      <p className="mt-20 max-w-3xl font-display text-3xl leading-snug text-textMuted md:text-4xl">
         «{contact.closing}»
       </p>
 

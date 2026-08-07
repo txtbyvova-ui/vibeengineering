@@ -63,7 +63,7 @@ export default function Team() {
               ))}
             </div>
 
-            <p className="mt-8 font-display text-xl italic leading-snug text-textMain md:text-2xl">
+            <p className="mt-8 font-display text-xl leading-snug text-textMain md:text-2xl">
               «{member.quote}»
             </p>
 
