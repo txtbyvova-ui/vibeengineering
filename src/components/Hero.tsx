@@ -2,7 +2,9 @@ import { useRef } from "react";
 import { motion } from "framer-motion";
 import RevealText from "@/components/ui/RevealText";
 import HeroMetrics from "@/components/ui/HeroMetrics";
-import StructuralGridCanvas from "@/components/ui/StructuralGridCanvas";
+// Сцена Hero. Ферма (StructuralGridCanvas) осталась в дереве — переключение
+// обратно это одна строка здесь; см. docs/REPORT-hero-truss-max.md.
+import HeroScene from "@/components/ui/HeroScene";
 import { hero } from "@/data/hero";
 import type { HeadlinePart } from "@/data/hero";
 
@@ -32,7 +34,7 @@ export default function Hero() {
       // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
       className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
     >
-      <StructuralGridCanvas hostRef={heroRef} headlineRef={headlineRef} className="z-0" />
+      <HeroScene hostRef={heroRef} className="z-0" />
 
       {/* Micro-label */}
       <motion.div
