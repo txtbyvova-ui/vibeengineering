@@ -15,9 +15,7 @@ export default function Team() {
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{teamHeading.title}</RevealText>
         </h2>
-        <span lang="en" className="mono-label">
-          {teamHeading.eyebrow}
-        </span>
+        <span className="mono-label">{teamHeading.eyebrow}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2">
@@ -65,7 +63,7 @@ export default function Team() {
               ))}
             </div>
 
-            <p className="mt-8 font-display text-xl italic leading-snug text-textMain md:text-2xl">
+            <p className="mt-8 font-display text-xl leading-snug text-textMain md:text-2xl">
               «{member.quote}»
             </p>
 

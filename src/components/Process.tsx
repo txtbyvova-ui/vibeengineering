@@ -11,9 +11,7 @@ export default function Process() {
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{processHeading.title}</RevealText>
         </h2>
-        <span lang="en" className="mono-label">
-          {processHeading.eyebrow}
-        </span>
+        <span className="mono-label">{processHeading.eyebrow}</span>
       </div>
 
       <p className="mb-12 max-w-xl text-textMuted md:text-lg">{processHeading.subtitle}</p>
@@ -68,7 +66,8 @@ export default function Process() {
         </a>
       </motion.div>
 
-      <p className="mt-12 max-w-2xl font-display text-2xl italic text-textMuted md:text-3xl">
+      {/* Без italic: курсива у заголовочного шрифта нет, цитату держат кавычки */}
+      <p className="mt-12 max-w-2xl font-display text-2xl text-textMuted md:text-3xl">
         «{processQuote}»
       </p>
     </section>

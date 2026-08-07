@@ -8,7 +8,7 @@ export const contact = {
     "Если задача не наша — скажем прямо и подскажем, к кому идти.",
   cta: {
     label: "Написать в Telegram",
-    href: "https://t.me/vibeengineering",
+    href: "https://t.me/vovaegorovv",
   } satisfies Link,
   closing: "Проекты начинаются с одного сообщения.",
   note: "Ответим за 2 часа · Telegram",
@@ -17,19 +17,18 @@ export const contact = {
 export const contactLinks: ContactLink[] = [
   {
     label: "Telegram",
-    handle: "@vibeengineering",
-    href: "https://t.me/vibeengineering",
+    handle: "@vovaegorovv",
+    href: "https://t.me/vovaegorovv",
   },
   {
     label: "Email",
     handle: "hq@vibeengineering.ru",
     href: "mailto:hq@vibeengineering.ru",
   },
-  // Каналов связи ровно два, и это РЕШЕНИЕ ВЛАДЕЛЬЦА (2026-08-07), а не пропуск.
-  // Третьим блоком стоял GitHub на github.com/vibeengineering — проверено через
-  // GitHub API: организация «VibeEngineering.ai» (0 публичных репозиториев,
-  // домен .ai), посторонняя компания, а не бюро. GitHub-аккаунта у бюро нет,
-  // блок снят насовсем. Не заводить сюда третий канал без указания владельца.
+  // Каналов связи ровно два, и это РЕШЕНИЕ ВЛАДЕЛЬЦА, а не пропуск: GitHub-блок
+  // снят насовсем. Не заводить сюда третий канал без указания владельца —
+  // и помнить правило для `sameAs` в index.html: там только то, что реально
+  // опубликовано ссылкой на странице. Разбор — docs/BACKLOG.md §9 и §58.
 ];
 
 /**

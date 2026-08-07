@@ -11,12 +11,14 @@ import CasesJsonLd from "@/components/ui/CasesJsonLd";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /**
- * Слот картинки мета-кейса. От md он ограничен `md:max-w-md` — это константа
- * 448 px, а не доля вьюпорта; ниже md картинка занимает ширину секции за вычетом
- * `px-5` и `p-8`, то есть примерно `100vw − 104px`. Прежние «44vw / 86vw»
- * завышали слот и заставляли браузер брать из srcSet кандидат на ступень крупнее.
+ * Слот картинки мета-кейса — по трём режимам раскладки, иначе браузер возьмёт
+ * из srcSet кандидат не той ступени:
+ *   от lg  — фиксированный трек сетки, ровно 28rem = 448 px;
+ *   md..lg — одна колонка во всю ширину за вычетом `px-10` секции и `p-12` блока;
+ *   до md  — то же, но `px-5` и `p-8`.
  */
-const META_SIZES = "(min-width: 768px) 448px, calc(100vw - 104px)";
+const META_SIZES =
+  "(min-width: 1024px) 448px, (min-width: 768px) calc(100vw - 176px), calc(100vw - 104px)";
 
 export default function Cases() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -58,9 +60,7 @@ export default function Cases() {
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{casesHeading.title}</RevealText>
         </h2>
-        <span lang="en" className="mono-label">
-          {casesHeading.eyebrow}
-        </span>
+        <span className="mono-label">{casesHeading.eyebrow}</span>
       </div>
 
       <CaseRail studies={cases} onOpen={open} cardRefs={cardRefs} />
@@ -80,12 +80,20 @@ export default function Cases() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-10% 0px" }}
         transition={{ duration: 0.8, ease: EASE }}
-        className="mt-20 grid grid-cols-1 gap-8 border border-hairline p-8 md:grid-cols-[1fr_auto] md:items-start md:gap-12 md:p-12"
+        // Две колонки только от lg, и вторая — ФИКСИРОВАННАЯ. Обе половины
+        // важны, обе замерены (768 px, 2026-08-08):
+        //   • `auto`-трек не давал `w-full` картинки от чего считаться: до
+        //     загрузки она занимала 3×2 px, после — 448×280, блок вырастал
+        //     на 909 px и утаскивал всё, что ниже. CLS 0.98 при пороге 0.1.
+        //     `w-auto` это не лечит: у незагруженной картинки нет натурального
+        //     размера, атрибуты width/height задают только соотношение сторон.
+        //   • На md две колонки просто не помещались: картинка забирала 448 px
+        //     из 592, тексту оставалось 96 — абзац вытягивался в вертикальную
+        //     ленту. Это и была та самая лишняя высота.
+        className="mt-20 grid grid-cols-1 gap-8 border border-hairline p-8 md:gap-12 md:p-12 lg:grid-cols-[1fr_28rem] lg:items-start"
       >
         <div>
-          <span lang="en" className="mono-label">
-            {metaCase.eyebrow}
-          </span>
+          <span className="mono-label">{metaCase.eyebrow}</span>
 
           <h3 className="mt-6 font-display text-3xl font-medium tracking-tightest md:text-4xl">
             {metaCase.title}
@@ -94,13 +102,16 @@ export default function Cases() {
           <p className="mt-5 max-w-2xl text-textMuted">{metaCase.body}</p>
         </div>
 
+        {/* `w-full` работает в обоих режимах: до lg колонка одна и её ширина
+            определена, от lg трек фиксирован в 28rem. Место под картинку
+            резервируется до загрузки — разбор в комментарии к сетке выше. */}
         <Picture
           image={metaCaseImage}
           sizes={META_SIZES}
-          className="aspect-[16/10] w-full border border-hairline object-cover md:max-w-md"
+          className="aspect-[16/10] w-full border border-hairline object-cover"
         />
 
-        <div className="grid grid-cols-1 gap-6 border-t border-hairline pt-6 sm:grid-cols-3 md:col-span-2">
+        <div className="grid grid-cols-1 gap-6 border-t border-hairline pt-6 sm:grid-cols-3 lg:col-span-2">
           {metaCase.metrics.map(([value, label]) => (
             <div key={label}>
               <div className="font-display text-2xl font-semibold text-accent md:text-3xl">
@@ -113,15 +124,8 @@ export default function Cases() {
           ))}
         </div>
 
-        <a
-          href={metaCase.link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-fit items-center gap-2 border border-hairline px-5 py-3 font-mono text-xs uppercase tracking-[0.14em] text-textMain transition-colors duration-300 hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:col-span-2"
-        >
-          {metaCase.link.label}
-          <span aria-hidden>↗</span>
-        </a>
+        {/* Ссылки здесь нет намеренно: стояла на предыдущую версию сайта бюро
+            и уводила трафик с актуального лендинга. Разбор — в data/cases.ts */}
       </motion.aside>
     </section>
   );

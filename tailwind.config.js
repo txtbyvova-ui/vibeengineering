@@ -13,9 +13,12 @@ export default {
       borderColor: {
         hairline: "rgba(255,255,255,0.08)",
       },
+      // Все три семейства несут кириллицу — проверено разбором cmap, а не на глаз.
+      // Предшественники (Clash Display, Space Grotesk) не несли, и русский текст
+      // рендерился системным шрифтом. @font-face и разбор — в src/index.css.
       fontFamily: {
-        display: ['"Clash Display"', "sans-serif"],
-        sans: ['"Space Grotesk"', "sans-serif"],
+        display: ['"M PLUS Rounded 1c"', "sans-serif"],
+        sans: ['"IBM Plex Sans"', "sans-serif"],
         mono: ['"JetBrains Mono"', "monospace"],
       },
       letterSpacing: {
