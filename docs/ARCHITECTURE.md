@@ -27,7 +27,7 @@ SEO-обвязка), ветка `feat/content-v2`.
 | Слой | Технология | Роль |
 |------|-----------|------|
 | Сборка | Vite 5 (`@vitejs/plugin-react`) | dev-сервер, prod-бандл, alias `@ → ./src` |
-| UI | React 18 + TypeScript 5.5 (`strict`) | 8 секций-компонентов, без роутера и state-менеджера |
+| UI | React 18 + TypeScript 5.5 (`strict`) | 9 секций-компонентов, без роутера и state-менеджера |
 | Стили | Tailwind CSS 3.4 + PostCSS | дизайн-токены в конфиге, примитивы в `@layer components` |
 | Анимация | Framer Motion 11 | только entry/scroll-анимации, интерактивной анимации нет |
 | Шрифты | Clash Display (Fontshare), Space Grotesk + JetBrains Mono (Google Fonts) | подключены `<link>` из `index.html`. ⚠️ см. §6.4 — кириллицу из них умеет только JetBrains Mono |
@@ -80,6 +80,7 @@ vibeengineering/
     ├── data/                   # ВЕСЬ пользовательский текст и пути к медиа
     │   ├── hero.ts             # заголовок кусками, лид, CTA
     │   ├── heroMetrics.ts      # 3 метрики первого экрана для count-up
+    │   ├── services.ts         # шапка секции + 4 направления услуг
     │   ├── usp.ts              # шапка секции + 3 пункта
     │   ├── cases.ts            # 4 кейса + мета-кейс
     │   ├── media.ts            # интринсики, alt-тексты и пути в public/media
@@ -93,6 +94,7 @@ vibeengineering/
         ├── Nav.tsx             # fixed + mix-blend-difference, реагирует на scrollY > 24
         ├── Hero.tsx            # h1 + метрики + CTA, единственный h1 на странице
         ├── Marquee.tsx         # бесконечная лента клиентов (CSS-анимация, не JS)
+        ├── Services.tsx        # 4 направления: сайты, боты, веб-приложения, AI
         ├── USP.tsx             # 3 преимущества
         ├── Cases.tsx           # лента кейсов + модалка + мета-кейс
         ├── Process.tsx         # 4 этапа + блок сметы + цитата
@@ -198,8 +200,14 @@ src/App.tsx          фиксированный порядок секций
 в [data/media.ts](../src/data/media.ts) — одном месте, синхронном с `public/media`.
 
 Порядок секций задаётся только в [App.tsx](../src/App.tsx:15):
-`Nav → Hero → Marquee → USP → Cases → Process → Team → Contact`.
-Якоря для навигации: `#top` (Hero), `#work` (Cases), `#process`, `#team`, `#contact`.
+`Nav → Hero → Marquee → Services → USP → Cases → Process → Team → Contact`.
+Якоря для навигации: `#top` (Hero), `#services`, `#work` (Cases), `#process`, `#team`,
+`#contact`. `#services` пункта в меню пока не имеет — якорь заведён на будущее.
+
+`Services` стоит перед `USP` намеренно: сначала «что вы для меня сделаете»,
+потом «почему вы». До 2026-08-07 состав услуг на странице не назывался вовсе —
+он был только в `hasOfferCatalog` структурированных данных, то есть роботы знали
+о нём больше, чем посетители.
 
 ## 6. Дизайн-система
 
@@ -262,15 +270,15 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 ### 6.5 Повторяющиеся паттерны разметки
 
-Три секции (`Cases`, `Process`, `Team`) используют один и тот же заголовок:
+Четыре секции (`Services`, `Cases`, `Process`, `Team`) используют один и тот же заголовок:
 `flex items-end justify-between border-b border-hairline pb-6` + `h2` слева
 + `.mono-label` с ромбом `◆` справа. Компонента для него нет — паттерн скопирован
-трижды. Кандидат №1 на извлечение в `ui/SectionHeader.tsx`.
+четырежды. Кандидат №1 на извлечение в `ui/SectionHeader.tsx`.
 
 ## 7. Анимационная модель
 
 Единая easing-кривая `[0.16, 1, 0.3, 1]` (out-expo) объявлена **пять раз** —
-константа `EASE` продублирована в `Hero`, `USP`, `Cases`, `Process`, `Team`,
+константа `EASE` продублирована в `Hero`, `Services`, `USP`, `Cases`, `Process`, `Team`,
 `Contact` и `RevealText`, плюс тот же кубик в `tailwind.config.js` и в `index.css`.
 
 Два способа анимации, оба на въезд, ни один не реагирует на действия пользователя:

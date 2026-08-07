@@ -19,8 +19,6 @@ export const caseBlockLabels = ["Задача", "Решение", "Резуль�
 export const caseUiLabels = {
   railLabel: "Кейсы",
   hint: "Листайте вбок · нажмите на карточку, чтобы раскрыть",
-  /** Видимая подпись внизу карточки. */
-  open: "Смотреть кейс",
   /** Имя кнопки карточки для скринридера: дальше идут клиент и заголовок. */
   openAction: "Открыть кейс",
   railPrev: "Предыдущие кейсы",
@@ -44,13 +42,17 @@ export const TBD = "уточняется";
  *
  * Порядок — воронка доверия, а не хронология: сначала веб/digital (за этим
  * приходит малый бизнес), потом инженерная ширина, потом размер клиента.
+ *
+ * ⚠️ `title` — единственный крючок карточки: остального контента там нет.
+ * Формула — результат или цифра, а не «Сайт для X», и жёсткий лимит длины
+ * (см. комментарий у поля в `src/types/index.ts`).
  */
 export const cases: CaseStudy[] = [
   {
     id: 1,
     slug: "mvideo",
     client: "М.Видео",
-    title: "Найм разработчиков через Tinder и Telegram-бота",
+    title: "4 200 мэтчей в Tinder",
     tag: "Бот",
     year: 2022,
     problem:
@@ -74,7 +76,7 @@ export const cases: CaseStudy[] = [
     id: 2,
     slug: "vegroove",
     client: "VEgroove",
-    title: "Сервис сценарной музыки для заведений",
+    title: "+20% выручки на музыке",
     tag: "Веб-приложение",
     year: null,
     problem:
@@ -99,7 +101,7 @@ export const cases: CaseStudy[] = [
     id: 3,
     slug: "kupikod",
     client: "Kupikod",
-    title: "Фотозона на ВДНХ со сбором контактов в один клик",
+    title: "400 кг стали за 120 часов",
     tag: "Инсталляция",
     year: null,
     problem:
@@ -130,7 +132,7 @@ export const cases: CaseStudy[] = [
     id: 4,
     slug: "alfabank",
     client: "Альфа-Банк",
-    title: "Квест Alfa Battle для 150 продакт-менеджеров",
+    title: "Выиграли тендер на 35 млн",
     tag: "Концепция",
     year: null,
     problem:

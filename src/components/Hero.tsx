@@ -8,6 +8,9 @@ import type { HeadlinePart } from "@/data/hero";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+/** CTA ведёт наружу (Telegram), а не якорем — тот же приём, что в Contact. */
+const external = hero.cta.href.startsWith("http");
+
 /** Куски заголовка → строки: `break` открывает новую. */
 const lines = hero.headline.reduce<HeadlinePart[][]>((acc, part) => {
   if (part.break || acc.length === 0) acc.push([]);
@@ -39,7 +42,7 @@ export default function Hero() {
         className="relative z-10 flex items-center gap-3"
       >
         <span className="h-2 w-2 shrink-0 animate-pulseDot rounded-full bg-accent" />
-        <span lang="en" className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent">
           {hero.microLabel}
         </span>
       </motion.div>
@@ -88,6 +91,8 @@ export default function Hero() {
           >
             <a
               href={hero.cta.href}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
               className="btn-fill inline-flex items-center gap-3 bg-accent px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {hero.cta.label}
