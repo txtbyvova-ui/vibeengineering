@@ -58,9 +58,7 @@ export default function Cases() {
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{casesHeading.title}</RevealText>
         </h2>
-        <span lang="en" className="mono-label">
-          {casesHeading.eyebrow}
-        </span>
+        <span className="mono-label">{casesHeading.eyebrow}</span>
       </div>
 
       <CaseRail studies={cases} onOpen={open} cardRefs={cardRefs} />
@@ -83,9 +81,7 @@ export default function Cases() {
         className="mt-20 grid grid-cols-1 gap-8 border border-hairline p-8 md:grid-cols-[1fr_auto] md:items-start md:gap-12 md:p-12"
       >
         <div>
-          <span lang="en" className="mono-label">
-            {metaCase.eyebrow}
-          </span>
+          <span className="mono-label">{metaCase.eyebrow}</span>
 
           <h3 className="mt-6 font-display text-3xl font-medium tracking-tightest md:text-4xl">
             {metaCase.title}
@@ -113,15 +109,8 @@ export default function Cases() {
           ))}
         </div>
 
-        <a
-          href={metaCase.link.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-fit items-center gap-2 border border-hairline px-5 py-3 font-mono text-xs uppercase tracking-[0.14em] text-textMain transition-colors duration-300 hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:col-span-2"
-        >
-          {metaCase.link.label}
-          <span aria-hidden>↗</span>
-        </a>
+        {/* Ссылки здесь нет намеренно: стояла на предыдущую версию сайта бюро
+            и уводила трафик с актуального лендинга. Разбор — в data/cases.ts */}
       </motion.aside>
     </section>
   );

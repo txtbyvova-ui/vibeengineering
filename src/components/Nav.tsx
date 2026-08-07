@@ -31,7 +31,6 @@ export default function Nav() {
             <a
               key={link.href}
               href={link.href}
-              lang="en"
               className="font-mono text-xs uppercase tracking-[0.16em] text-textMain transition-opacity duration-300 hover:opacity-50"
             >
               {link.label}

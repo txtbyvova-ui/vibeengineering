@@ -11,9 +11,7 @@ export default function Process() {
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{processHeading.title}</RevealText>
         </h2>
-        <span lang="en" className="mono-label">
-          {processHeading.eyebrow}
-        </span>
+        <span className="mono-label">{processHeading.eyebrow}</span>
       </div>
 
       <p className="mb-12 max-w-xl text-textMuted md:text-lg">{processHeading.subtitle}</p>
