@@ -24,7 +24,10 @@ export default function HeroMetrics({ className = "" }: { className?: string }) 
             <span data-countup>{metric.value}</span>
             {metric.suffix}
           </div>
-          <div className="mono-label mt-2 block">{metric.label}</div>
+          {/* break-words обязателен: колонка на 320 px — 83 px, а неразрывное
+              «реализованных» при tracking 0.18em занимает 112 px и наезжало
+              глифами на текст соседней метрики (замерено 12.9 px наложения). */}
+          <div className="mono-label mt-2 block break-words">{metric.label}</div>
         </div>
       ))}
     </div>

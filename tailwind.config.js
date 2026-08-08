@@ -36,7 +36,10 @@ export default {
         },
       },
       animation: {
-        marquee: "marquee 28s linear infinite",
+        // 56 s, а не 28: трек в src/components/Marquee.tsx повторяет список
+        // вчетверо ради бесшовности на широких мониторах, и путь до -50% вырос
+        // вдвое. Скорость в пикселях в секунду осталась прежней.
+        marquee: "marquee 56s linear infinite",
         pulseDot: "pulseDot 1.4s ease-in-out infinite",
       },
     },

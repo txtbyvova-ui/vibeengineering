@@ -6,17 +6,52 @@ export interface Link {
   href: string;
 }
 
+/** Метрика кейса. У Team и Hero свои форматы — этот не смешивать с `Metric`. */
+export interface CaseMetric {
+  value: string;
+  label: string;
+}
+
+/**
+ * Категория кейса. Список закрытый: по нему строится фильтр смысла — читатель
+ * должен за секунду понять, что за работа. `Концепция` добавлена сверх исходной
+ * пятёрки под Альфа-Банк, см. docs/BACKLOG.md §51.
+ */
+export type CaseTag =
+  | "Сайт"
+  | "Бот"
+  | "Веб-приложение"
+  | "AI"
+  | "Инсталляция"
+  | "Концепция";
+
+/**
+ * Единая схема кейса. Все поля обязательны, кроме помеченных `?` —
+ * «у этого кейса есть метрика, у того нет» здесь невозможно по типу.
+ *
+ * Незаполненные факты держим как `null`, а не выдумываем: разметка такое поле
+ * просто не рендерит, а список пробелов лежит в `caseDataGaps`.
+ */
 export interface CaseStudy {
-  /** Латинский идентификатор: ключ React и префикс путей к медиа. */
+  id: number;
+  /** Латинский идентификатор: ключ React, префикс путей к медиа, якорь модалки. */
   slug: string;
+  client: string;
+  /** Что сделали. Одна строка, до 60 символов. */
   title: string;
-  tags: string[];
+  tag: CaseTag;
+  /** `null` — год не подтверждён владельцем. */
+  year: number | null;
+  /** 1–2 предложения. Начинается с задачи, а не с «мы». */
   problem: string;
+  /** 2–3 предложения. */
   solution: string;
+  /** 1–2 предложения. */
   result: string;
-  metrics: Metric[];
-  /** Строка клиентов под метриками — есть не у каждого кейса. */
-  clients?: string;
+  /** 2–3 метрики. Пустым быть не может — берём фактические: срок, объём, вес. */
+  metrics: CaseMetric[];
+  /** 3–6 тегов: технологии или материалы. Короче трёх — значит, есть пробел. */
+  stack: string[];
   /** «Открыть сайт →» для кейсов с живым продуктом. */
   link?: Link;
 }
@@ -34,8 +69,6 @@ export interface ResponsiveImage {
   alt: string;
   /** Утилита object-position, если центр кадра — не то, что надо показать. */
   position?: string;
-  /** Утилита aspect-*, если пропорция кадра отличается от дефолта слота. */
-  aspect?: string;
 }
 
 /** Видео кейса: `{base}.mp4` + `{base}.poster.jpg`. */
@@ -47,10 +80,15 @@ export interface MediaVideo {
   alt: string;
 }
 
+/**
+ * Медиа кейса. `cover` есть у каждого и рендерится в фиксированной пропорции —
+ * карточки ленты обязаны быть одного размера. `gallery` и `video` опциональны
+ * и живут только в модалке.
+ */
 export interface CaseMedia {
-  main: ResponsiveImage;
+  cover: ResponsiveImage;
+  gallery?: ResponsiveImage[];
   video?: MediaVideo;
-  thumbs?: ResponsiveImage[];
 }
 
 export interface TeamMember {

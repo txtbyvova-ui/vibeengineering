@@ -5,11 +5,22 @@ dist-ssr
 .DS_Store
 .vite
 
+# Кэш Clash Display для OG-скрипта. Лежит вне node_modules намеренно: `npm ci`
+# сносит node_modules целиком, и кэш внутри него не пережил бы установку.
+# Коммитить сам шрифт нельзя — ITF FFL запрещает публичный сервер,
+# разбор в assets/fonts/README.md.
+.cache
+
+# Локальные настройки инструментов и черновые снимки экрана
+.claude/settings.local.json
+.shots/
+
 # OG-карточка и apple-touch-icon генерируются сборкой
 # (scripts/generate-og.mjs, scripts/generate-icons.mjs).
 # В репозитории держим исходник (favicon.svg), а не производный растр.
 public/og.png
 public/apple-touch-icon.png
+public/favicon.ico
 
 # Исходный медиа-архив (оригиналы от владельца). В прод едут только
 # оптимизированные производные из public/media — см. scripts/optimize-media.mjs.

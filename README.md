@@ -43,15 +43,16 @@ vibe-engineering/
 │   ├── favicon.svg            # committed source of the mark
 │   ├── robots.txt, sitemap.xml
 │   └── media/                 # committed AVIF/WebP/JPEG + case video
+├── docs/                      # ARCHITECTURE, BACKLOG, specs, review reports
 └── src/
     ├── main.tsx               # React entry, MotionConfig reducedMotion="user"
     ├── App.tsx                # section composition
     ├── index.css              # tokens, globals, hollow-text, btn-fill
     ├── types/
     │   └── index.ts           # shared interfaces
-    ├── hooks/                 # useCountUp, useStructuralGrid
+    ├── hooks/                 # useCountUp, useStructuralGrid, usePrefersReducedMotion
     ├── data/                  # every user-facing string lives here
-    │   ├── hero.ts, heroMetrics.ts
+    │   ├── hero.ts, heroMetrics.ts, structuralGrid.ts
     │   ├── usp.ts, cases.ts, process.ts, team.ts
     │   ├── contact.ts, clients.ts, nav.ts
     │   └── media.ts           # asset paths, intrinsics, alt text
@@ -60,7 +61,7 @@ vibe-engineering/
         ├── Hero.tsx           # canvas truss + count-up metrics
         ├── Marquee.tsx        # infinite outlined logo scroll
         ├── USP.tsx
-        ├── Cases.tsx          # case grid + meta case
+        ├── Cases.tsx          # case rail + modal + meta case
         ├── Process.tsx
         ├── Team.tsx
         ├── Contact.tsx
@@ -69,7 +70,11 @@ vibe-engineering/
             ├── HeroMetrics.tsx
             ├── StructuralGridCanvas.tsx
             ├── Picture.tsx           # AVIF -> WebP -> JPEG, responsive
-            └── LazyVideo.tsx         # IntersectionObserver-gated video
+            ├── LazyVideo.tsx         # IntersectionObserver-gated video
+            ├── CaseRail.tsx          # horizontal case rail (native scroll-snap)
+            ├── CaseCard.tsx          # rail card + stack chip
+            ├── CaseModal.tsx         # case detail, portalled into body
+            └── CasesJsonLd.tsx       # ItemList structured data for the cases
 ```
 
 ## Page order

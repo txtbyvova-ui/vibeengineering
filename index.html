@@ -11,8 +11,10 @@
     />
     <link rel="canonical" href="https://vibeengineering.ru/" />
 
-    <!-- Иконки: SVG в git как исходник, apple-touch-icon.png собирается в prebuild -->
+    <!-- Иконки: SVG — исходник, растры собираются в prebuild.
+         favicon.ico нужен клиентам без поддержки SVG-иконки. -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" sizes="32x32" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Open Graph -->
@@ -49,10 +51,12 @@
     />
     <meta name="twitter:image" content="https://vibeengineering.ru/og.png" />
 
-    <!-- Fonts: preconnect + preload -->
+    <!-- Fonts. У каждого CDN два хоста с разным режимом соединения: CSS — без
+         crossorigin, woff2 — с ним. Прогрев в неверном режиме бесполезен. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="preconnect" href="https://api.fontshare.com" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
     <link
       rel="preload"
       as="style"
@@ -67,18 +71,14 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
 
-    <!--
-      JSON-LD. Organization и LocalBusiness — один и тот же субъект, поэтому
-      связаны через @id, а не продублированы двумя независимыми узлами.
-      В sameAs только проверенные профили (оба отвечают 200 и опубликованы
-      ссылками на самой странице).
-    -->
+    <!-- JSON-LD: один узел с массивом @type (Organization и LocalBusiness —
+         это один субъект). Правила для sameAs — docs/BACKLOG.md §9. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@graph": [
           {
-            "@type": "Organization",
+            "@type": ["Organization", "LocalBusiness"],
             "@id": "https://vibeengineering.ru/#organization",
             "name": "Vibe Engineering",
             "legalName": "ООО «ВАЙБ ИНЖИНИРИНГ»",
@@ -87,10 +87,7 @@
             "image": "https://vibeengineering.ru/og.png",
             "email": "hq@vibeengineering.ru",
             "description": "Инженерное бюро: сайты, Telegram-боты, веб-приложения и AI-интеграции. Первый рабочий результат — через 48 часов.",
-            "sameAs": [
-              "https://t.me/vibeengineering",
-              "https://github.com/vibeengineering"
-            ],
+            "sameAs": ["https://t.me/vibeengineering"],
             "founder": [
               {
                 "@type": "Person",
@@ -102,16 +99,7 @@
                 "name": "Роман Петров",
                 "jobTitle": "Технический директор"
               }
-            ]
-          },
-          {
-            "@type": "LocalBusiness",
-            "@id": "https://vibeengineering.ru/#business",
-            "parentOrganization": { "@id": "https://vibeengineering.ru/#organization" },
-            "name": "Vibe Engineering",
-            "url": "https://vibeengineering.ru/",
-            "image": "https://vibeengineering.ru/og.png",
-            "email": "hq@vibeengineering.ru",
+            ],
             "priceRange": "$$",
             "address": {
               "@type": "PostalAddress",

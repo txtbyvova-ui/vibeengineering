@@ -11,7 +11,12 @@
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — карта кода и дизайн-системы.
 5. [docs/BACKLOG.md](docs/BACKLOG.md) — известные дефекты и технический долг.
 6. [docs/SPEC-hero-truss.md](docs/SPEC-hero-truss.md) — спецификация переделки Hero
-   (интерактивная ферма на Canvas 2D). Не реализовано.
+   (интерактивная ферма на Canvas 2D). Реализовано.
+7. [docs/REPORT-cases-rail.md](docs/REPORT-cases-rail.md) — отчёт по ленте кейсов:
+   схема кейса, замеры CLS и веса, открытые вопросы к владельцу.
+8. [docs/REPORT-multi-review-2026-08-06.md](docs/REPORT-multi-review-2026-08-06.md) —
+   мульти-ревью и починка: 13 закрытых дефектов, 2 опровергнутые гипотезы
+   и то, что в панели браузера принципиально непроверяемо (§5).
 
 Короткая версия, если читать больше нечего:
 

@@ -1,12 +1,13 @@
-import { clients } from "@/data/clients";
+import { CLIENTS_REPEATS, clients, clientsLabel } from "@/data/clients";
 
 export default function Marquee() {
-  // Duplicate the list so the -50% translate loops seamlessly.
-  const loop = [...clients, ...clients];
+  // Повтор списка ради бесшовной петли: половина трека обязана быть шире
+  // вьюпорта, иначе в конце цикла справа зияет пустая полоса — см. clients.ts.
+  const loop = Array.from({ length: CLIENTS_REPEATS }, () => clients).flat();
 
   return (
     <section
-      aria-label="Клиенты"
+      aria-label={clientsLabel}
       className="group overflow-hidden border-y border-hairline py-6 md:py-8"
     >
       <div className="flex w-max animate-marquee whitespace-nowrap group-hover:[animation-play-state:paused]">
