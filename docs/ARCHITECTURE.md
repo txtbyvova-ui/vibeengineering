@@ -76,7 +76,11 @@ vibeengineering/
     ├── index.css               # @layer base + components + utilities (prefers-reduced-motion)
     ├── vite-env.d.ts
     ├── types/index.ts          # CaseStudy, TeamMember, ProcessStep, ResponsiveImage, …
-    ├── hooks/                  # useCountUp, useStructuralGrid, usePrefersReducedMotion
+    ├── hooks/
+    │   ├── useCountUp.ts       # count-up метрик, пишет textContent без ре-рендеров
+    │   ├── useFunnelLoop.ts    # владелец rAF 3D-сцены: троттл, пауза, watchdog
+    │   ├── useStructuralGrid.ts        # ферма на Canvas 2D — ПРЕДЫДУЩАЯ сцена Hero
+    │   └── usePrefersReducedMotion.ts
     ├── data/                   # ВЕСЬ пользовательский текст и пути к медиа
     │   ├── hero.ts             # заголовок кусками, лид, CTA
     │   ├── heroMetrics.ts      # 3 метрики первого экрана для count-up
@@ -88,11 +92,12 @@ vibeengineering/
     │   ├── team.ts             # 2 основателя
     │   ├── contact.ts          # финальный оффер, ссылки, реквизиты футера
     │   ├── clients.ts          # 7 брендов для marquee
-    │   ├── structuralGrid.ts   # ручки Canvas-фермы Hero и маска канвы
+    │   ├── funnel.ts           # геометрия воронки и ручки; профиль общий 3D ↔ SVG
+    │   ├── structuralGrid.ts   # ручки фермы (предыдущая сцена Hero)
     │   └── nav.ts              # пункты меню, логотип, кнопка Telegram
     └── components/
         ├── Nav.tsx             # fixed + mix-blend-difference, реагирует на scrollY > 24
-        ├── Hero.tsx            # h1 + метрики + CTA, единственный h1 на странице
+        ├── Hero.tsx            # сцена + h1 + метрики + CTA, единственный h1 на странице
         ├── Marquee.tsx         # бесконечная лента клиентов (CSS-анимация, не JS)
         ├── Services.tsx        # 4 направления: сайты, боты, веб-приложения, AI
         ├── USP.tsx             # 3 преимущества
@@ -103,7 +108,10 @@ vibeengineering/
         └── ui/
             ├── RevealText.tsx         # маска-раскрытие текста
             ├── HeroMetrics.tsx        # строка метрик с count-up
-            ├── StructuralGridCanvas.tsx  # ферма первого экрана, Canvas 2D
+            ├── HeroScene.tsx          # выбор 3D/SVG + ВЛАДЕЛЕЦ ленивого импорта
+            ├── ConversionFunnelCanvas.tsx  # r3f-сцена; ЕДИНСТВЕННЫЙ импортёр three
+            ├── FunnelBlueprint.tsx    # статичный SVG-чертёж воронки, тот же профиль
+            ├── StructuralGridCanvas.tsx  # обёртка фермы (предыдущая сцена Hero)
             ├── Picture.tsx            # <picture> AVIF → WebP → JPEG
             ├── LazyVideo.tsx          # видео по IntersectionObserver
             ├── CaseRail.tsx           # горизонтальная лента кейсов
@@ -238,7 +246,7 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 | Класс | Что делает |
 |-------|-----------|
-| `.bg-grid` | фиксированная сетка 4rem на весь экран, `z-index: -1`, анимация `gridShift` 20 s |
+| `.bg-grid` | фиксированная сетка 4rem на весь экран, `z-index: -1`, **статичная**. Анимация `gridShift` снята 2026-08-10: слой `fixed` во весь экран, `background-position` не композиторное свойство, и её кадры перерисовывали всё поверх — с работающей сценой Hero это стоило 28 fps из 50 |
 | `.text-hollow` | контурный текст акцентом, заливается акцентом на hover |
 | `.text-hollow-white` | контурный белым (35 %), на hover заливается акцентом |
 | `.mono-label` | стандартная mono-подпись секции (11px / uppercase / tracking 0.18em) |
@@ -303,9 +311,9 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 | Механизм | Чем гасится |
 |---|---|
-| CSS-анимации (`marquee`, `gridShift`, `pulseDot`), smooth scroll | медиаблок в `@layer utilities` [index.css](../src/index.css) |
+| CSS-анимации (`marquee`, `pulseDot`), smooth scroll | медиаблок в `@layer utilities` [index.css](../src/index.css) |
 | Framer Motion (анимирует инлайн-стили через rAF) | `MotionConfig reducedMotion="user"` в [main.tsx](../src/main.tsx) |
-| Canvas-ферма Hero | собственная JS-проверка в `useStructuralGrid` |
+| 3D-сцена Hero | JS-проверка в [ui/HeroScene.tsx](../src/components/ui/HeroScene.tsx) — и не просто гасит анимацию, а **вообще не грузит `three`**: гейт стоит до `React.lazy`, вместо сцены рендерится статичный SVG-чертёж |
 | Автоплей ролика кейса | собственная JS-проверка в [ui/LazyVideo.tsx](../src/components/ui/LazyVideo.tsx): вместо петли — постер. Контролы у плеера стоят **всегда**, независимо от настройки: ролик длиннее минуты, без механизма паузы это WCAG 2.2.2 |
 
 **Правило для нового кода:** любой новый источник движения вне CSS и Framer Motion
@@ -355,7 +363,51 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 такая: **производные — в git (`public/media`), оригиналы — нет** (`site media/`
 в `.gitignore`), а всё, что можно получить из исходника кодом (`og.png`,
 `apple-touch-icon.png`), по-прежнему генерируется, а не коммитится. Первый экран
-остаётся без картинок: там типографика, сетка и Canvas-ферма.
+остаётся без картинок: там типографика и процедурная сцена — 3D-воронка
+на десктопе, SVG-чертёж на мобиле, оба считаются кодом.
+
+## 10а. Сцена первого экрана
+
+Единственное место в проекте, где живёт тяжёлая зависимость, поэтому устройство
+описано здесь, а не только в отчёте.
+
+```
+Hero.tsx
+  └── HeroScene.tsx            ← решает ЧТО показать; гейт стоит ДО lazy
+        ├── FunnelBlueprint.tsx        статичный SVG (по умолчанию и как fallback)
+        └── lazy(ConversionFunnelCanvas)   ← весь three сидит здесь
+              └── useFunnelLoop.ts     владеет rAF: троттл, пауза, watchdog
+```
+
+| посетитель | сцена | грузится ли three |
+|---|---|---|
+| десктоп, `(hover: hover) and (pointer: fine)` | 3D-воронка | да, ~218 kB **после `load`** |
+| тач-устройство | SVG-чертёж | **нет** |
+| `prefers-reduced-motion: reduce` | SVG-чертёж | **нет** |
+
+Три вещи, которые легко сломать, не заметив:
+
+1. **Гейт обязан стоять до `React.lazy`.** Перенос проверки внутрь ленивого
+   компонента заставит телефон скачать `three`, чтобы тут же показать SVG.
+2. **Профиль воронки один** — `funnelRadius` в [data/funnel.ts](../src/data/funnel.ts).
+   3D и SVG считаются из него, поэтому силуэт не может разъехаться между видами.
+3. **`frameloop="never"`.** R3F своего rAF не заводит: кадры выдаёт `useFunnelLoop`
+   вызовом `advance()`. Отсюда и троттл, и пауза по `visibilitychange`
+   и `IntersectionObserver`, и односторонняя деградация dpr → гашение цикла.
+   При остановке на канве остаётся последний кадр — страница не «фризится».
+
+Низ сцены **измеряется** по нижней кромке h1 (`ResizeObserver` +
+`document.fonts.ready`), а не задаётся процентом: заголовок задан в `vw` и меняет
+высоту от вьюпорта, от подмены шрифта и от правок копирайта. Проценты в классах
+оставлены запасным вариантом, если h1 измерить не удалось.
+
+Предыдущая сцена — ферма Уоррена на Canvas 2D
+([useStructuralGrid.ts](../src/hooks/useStructuralGrid.ts),
+[ui/StructuralGridCanvas.tsx](../src/components/ui/StructuralGridCanvas.tsx),
+[data/structuralGrid.ts](../src/data/structuralGrid.ts)) — осталась в дереве,
+но **ни из чего не импортируется** и в бандл не попадает. Переключение обратно —
+одна строка импорта в `Hero.tsx`; обе сцены принимают одни и те же ref'ы.
+Разбор и замеры: [REPORT-hero-truss-max.md](REPORT-hero-truss-max.md).
 
 ## 11. Навигация по коду: RAG
 
