@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { advance } from "@react-three/fiber";
-import { FUNNEL } from "@/data/funnel";
 
 /**
- * Цикл рендера 3D-сцены. Сцена живёт на `frameloop="never"`, то есть R3F
+ * Цикл рендера R3F-сцены. Сцена живёт на `frameloop="never"`, то есть R3F
  * не заводит собственный rAF — кадры выдаём отсюда вызовом `advance()`.
  *
  * Так цикл получается ровно один и полностью управляемый: троттл по fps,
- * пауза по visibilitychange и по уходу секции из вьюпорта, watchdog по частоте
+ * пауза по `visibilitychange` и по уходу секции из вьюпорта, watchdog по частоте
  * кадров. При остановке цикла на канве остаётся последний отрисованный кадр —
  * сцена замирает статичной картинкой, страница не фризится.
+ *
+ * Хук общий для всех сцен первого экрана (воронка, wireframe): логика владения
+ * кадрами от содержимого сцены не зависит, а копия её в каждой сцене неминуемо
+ * разъехалась бы.
+ *
+ * ⚠️ `advance()` глобален и продвигает ВСЕ смонтированные R3F-корни. Двух живых
+ * сцен на странице быть не должно — иначе каждая получит по два кадра за тик.
  */
-export interface FunnelLoopStats {
+export interface SceneLoopStats {
   fps: number;
   frames: number;
   dprCap: number;
@@ -20,20 +26,48 @@ export interface FunnelLoopStats {
   degradation: number;
 }
 
-export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
+export interface SceneLoopOptions {
+  /** Потолок кадров. 60 при 60 Гц — кадр в кадр, 30 — каждый второй. */
+  fpsCap: number;
+  /** Ниже этого fps два окна подряд — шаг деградации. */
+  minFps: number;
+  /** Стартовый кап devicePixelRatio. */
   dprCap: number;
-  statsRef: RefObject<FunnelLoopStats>;
-} {
-  const [dprCap, setDprCap] = useState<number>(FUNNEL.dprCap);
-  const statsRef = useRef<FunnelLoopStats>({
+  /** Кап после первого шага деградации. */
+  dprFallback?: number;
+  /** Сколько не мерить после старта: компиляция шейдеров и reveal'ы заголовка. */
+  warmupMs?: number;
+  /**
+   * `false` — цикл не запускается вовсе. Для `prefers-reduced-motion`: сцене
+   * достаточно одного кадра, и его выдаёт сам R3F на `frameloop="demand"`.
+   */
+  enabled?: boolean;
+}
+
+export function useSceneLoop(
+  hostRef: RefObject<HTMLElement | null>,
+  options: SceneLoopOptions,
+): { dprCap: number; statsRef: RefObject<SceneLoopStats> } {
+  const {
+    fpsCap,
+    minFps,
+    dprCap: initialCap,
+    dprFallback = 1,
+    warmupMs = 1500,
+    enabled = true,
+  } = options;
+
+  const [dprCap, setDprCap] = useState<number>(initialCap);
+  const statsRef = useRef<SceneLoopStats>({
     fps: 0,
     frames: 0,
-    dprCap: FUNNEL.dprCap,
+    dprCap: initialCap,
     running: false,
     degradation: 0,
   });
 
   useEffect(() => {
+    if (!enabled) return;
     const host = hostRef.current;
     let raf = 0;
     let last = 0;
@@ -52,7 +86,7 @@ export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
     const step = (now: number) => {
       raf = requestAnimationFrame(step);
 
-      const minStep = 1000 / FUNNEL.fpsCap - 1;
+      const minStep = 1000 / fpsCap - 1;
       if (last !== 0 && now - last < minStep) return;
       last = now;
 
@@ -68,10 +102,8 @@ export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
       winFrames = 0;
       winStart = now;
 
-      // Первые полторы секунды идут reveal'ы заголовка и компиляция шейдеров —
-      // мерить бессмысленно, поймаем ложное срабатывание.
-      if (now - startedAt < 1500 || degradation >= 2) return;
-      if (fps >= FUNNEL.minFps) {
+      if (now - startedAt < warmupMs || degradation >= 2) return;
+      if (fps >= minFps) {
         bad = 0;
         return;
       }
@@ -81,8 +113,8 @@ export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
       stats.degradation = degradation;
       if (degradation === 1) {
         // Первый рычаг — заливка: она растёт как dpr².
-        stats.dprCap = 1;
-        setDprCap(1);
+        stats.dprCap = dprFallback;
+        setDprCap(dprFallback);
         startedAt = now;
         return;
       }
@@ -114,8 +146,7 @@ export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    // Hero занимает первый экран страницы высотой ~7000 px: ниже него сцену
-    // держать живой незачем.
+    // Страница высотой ~7000 px: ниже первого экрана держать сцену живой незачем.
     let io: IntersectionObserver | null = null;
     if (host) {
       io = new IntersectionObserver(
@@ -136,7 +167,7 @@ export function useFunnelLoop(hostRef: RefObject<HTMLElement | null>): {
       document.removeEventListener("visibilitychange", onVisibility);
       io?.disconnect();
     };
-  }, [hostRef]);
+  }, [hostRef, fpsCap, minFps, dprFallback, warmupMs, enabled]);
 
   return { dprCap, statsRef };
 }

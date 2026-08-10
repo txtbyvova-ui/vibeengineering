@@ -3,7 +3,7 @@ import type { MutableRefObject, RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { FUNNEL, funnelRadius, funnelY, ringDepths } from "@/data/funnel";
-import { useFunnelLoop } from "@/hooks/useFunnelLoop";
+import { useSceneLoop } from "@/hooks/useSceneLoop";
 
 /**
  * Воронка конверсии — процедурная 3D-сцена, ноль внешних ассетов.
@@ -411,7 +411,11 @@ interface Props {
 export default function ConversionFunnelCanvas({ hostRef }: Props) {
   const flow = useRef<FlowState>({ flash: 0, arrivals: 0 });
   const pointer = useRef<PointerState>({ x: 0, y: 0 });
-  const { dprCap, statsRef } = useFunnelLoop(hostRef);
+  const { dprCap, statsRef } = useSceneLoop(hostRef, {
+    fpsCap: FUNNEL.fpsCap,
+    minFps: FUNNEL.minFps,
+    dprCap: FUNNEL.dprCap,
+  });
   const debug =
     typeof location !== "undefined" && location.search.includes("debugFunnel");
 
@@ -432,7 +436,7 @@ export default function ConversionFunnelCanvas({ hostRef }: Props) {
 
   return (
     <Canvas
-      // R3F собственный rAF не заводит — кадры выдаёт useFunnelLoop.
+      // R3F собственный rAF не заводит — кадры выдаёт useSceneLoop.
       frameloop="never"
       dpr={[1, dprCap]}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
