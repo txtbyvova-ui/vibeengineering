@@ -221,15 +221,16 @@ export default function CaseRail({ studies, onOpen, cardRefs }: CaseRailProps) {
           ref={railRef}
           onKeyDown={onKeyDown}
           aria-label={caseUiLabels.railLabel}
-          className="no-scrollbar flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto scroll-px-5 px-5 pb-1 md:scroll-px-10 md:px-10"
+          // overscroll-x-contain: домотав ленту до края, свайп не должен
+          // перетекать на страницу и на жест «назад» в мобильных браузерах —
+          // именно это читается как «лента залипла».
+          className="no-scrollbar flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto overscroll-x-contain scroll-px-5 px-5 pb-1 md:scroll-px-10 md:px-10"
         >
           {studies.map((study, i) => (
             <li key={study.slug} className="w-[85vw] shrink-0 snap-start sm:w-[24rem] md:w-[26rem]">
               <CaseCard
                 ref={cardHandlers[i].ref}
                 study={study}
-                index={i}
-                total={studies.length}
                 eager={i < EAGER_COUNT}
                 onOpen={cardHandlers[i].open}
                 onFocus={keepInView}

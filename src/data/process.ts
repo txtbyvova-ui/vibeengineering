@@ -1,7 +1,7 @@
 import type { Link, ProcessStep, SectionHeading } from "@/types";
 
 export const processHeading: SectionHeading = {
-  eyebrow: "◆ Process",
+  eyebrow: "◆ Процесс",
   title: "Четыре этапа",
   subtitle: "Вы всегда знаете, что происходит и когда это закончится",
 };
