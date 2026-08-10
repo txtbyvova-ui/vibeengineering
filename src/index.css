@@ -231,7 +231,9 @@
   /* Блок обязан лежать в utilities: слой Tailwind-утилит идёт после
      пользовательских правил, и голое правило перебили бы .animate-marquee
      и .animate-pulseDot.
-     Canvas сюда НЕ попадает — у него своя JS-проверка в useStructuralGrid. */
+     Сцена Hero сюда НЕ попадает — она на WebGL, и медиазапрос её не видит:
+     решение принимает HeroScene своей проверкой matchMedia и при reduce
+     вообще не грузит three, показывая статичный SVG-чертёж. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

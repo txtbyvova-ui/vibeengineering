@@ -4,6 +4,7 @@ import RevealText from "@/components/ui/RevealText";
 import HeroMetrics from "@/components/ui/HeroMetrics";
 // Сцена Hero. Ферма (StructuralGridCanvas) осталась в дереве — переключение
 // обратно это одна строка здесь; см. docs/REPORT-hero-truss-max.md.
+// Обе сцены принимают одни и те же ref'ы, поэтому подмена ничего не ломает.
 import HeroScene from "@/components/ui/HeroScene";
 import { hero } from "@/data/hero";
 import type { HeadlinePart } from "@/data/hero";
@@ -22,8 +23,9 @@ const lines = hero.headline.reduce<HeadlinePart[][]>((acc, part) => {
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
-  // Бокс h1 — единственный замер, из которого считаются высота полосы фермы
-  // и стопы её маски. Процент здесь сломался бы: h1 прижат mt-auto к низу.
+  // Бокс h1 — единственный замер, по которому сцена находит свою нижнюю
+  // границу. Процент здесь сломался бы: h1 прижат mt-auto к низу, задан в vw
+  // и меняет высоту от правок копирайта.
   const headlineRef = useRef<HTMLHeadingElement>(null);
   let partIndex = 0;
 
@@ -37,7 +39,7 @@ export default function Hero() {
       // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
       className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
     >
-      <HeroScene hostRef={heroRef} className="z-0" />
+      <HeroScene hostRef={heroRef} headlineRef={headlineRef} className="z-0" />
 
       {/* Micro-label */}
       <motion.div
