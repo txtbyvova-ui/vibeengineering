@@ -10,9 +10,10 @@
 3. [MEMORY.md](MEMORY.md) — факты, пережившие сброс контекста.
 4. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — карта кода и дизайн-системы.
 5. [docs/BACKLOG.md](docs/BACKLOG.md) — известные дефекты и технический долг.
-6. [docs/REPORT-hero-funnel-3d.md](docs/REPORT-hero-funnel-3d.md) — **действующая
-   сцена Hero**: процедурная 3D-воронка конверсии на @react-three/fiber, замеры
-   бандла и кадров, гейты фолбэка, две методические ловушки замера.
+6. [docs/REPORT-hero-wireframe.md](docs/REPORT-hero-wireframe.md) — **действующая
+   сцена Hero**: wireframe на барицентрических координатах из
+   mattdesl/webgl-wireframes, панель параметров на leva, три режима, замеры
+   и шесть открытых вопросов к владельцу.
 7. [docs/REPORT-cases-rail.md](docs/REPORT-cases-rail.md) — отчёт по ленте кейсов:
    схема кейса, замеры CLS и веса, открытые вопросы к владельцу.
 8. [docs/REPORT-multi-review-2026-08-06.md](docs/REPORT-multi-review-2026-08-06.md) —
@@ -25,20 +26,25 @@
     смена шрифтов: почему присланные M PLUS 1 и Assistant не подошли,
     чем закрыт бэклог §0 и как нашёлся сдвиг вёрстки 0.98.
 
-Историческое, читать только если копаетесь в сцене Hero:
-[docs/SPEC-hero-truss.md](docs/SPEC-hero-truss.md) и
-[docs/REPORT-hero-truss-max.md](docs/REPORT-hero-truss-max.md) — ферма Уоррена
-на Canvas 2D, предыдущая сцена первого экрана. Реализована полностью, затем
-вытеснена воронкой; файлы остались в дереве, переключение обратно — одна строка
-импорта в `Hero.tsx`.
+Предыдущие сцены первого экрана — целы в дереве, но ни из чего не импортируются
+и в бандл не идут. Читать, если возвращаете их или строите новую сцену:
+
+- [docs/REPORT-hero-funnel-3d.md](docs/REPORT-hero-funnel-3d.md) — 3D-воронка
+  конверсии. Там же две методические ловушки замера, применимые к любой сцене.
+- [docs/REPORT-hero-truss-max.md](docs/REPORT-hero-truss-max.md) и
+  [docs/SPEC-hero-truss.md](docs/SPEC-hero-truss.md) — ферма Уоррена на Canvas 2D.
+
+Переключение сцены — одна строка импорта в `App.tsx` (для фермы — ещё и в `Hero.tsx`).
 
 Короткая версия, если читать больше нечего:
 
 - Стек: Vite + React 18 + TypeScript (strict) + Tailwind + Framer Motion.
-  Плюс three.js + @react-three/fiber — **только ленивым чанком** для сцены Hero.
-  Статический лендинг, ни роутера, ни бэкенда.
+  Плюс three.js + @react-three/fiber + leva — **только ленивым чанком** для сцены
+  Hero. Статический лендинг, ни роутера, ни бэкенда.
 - Гейт перед «готово»: `npm run build` **и** смоук в браузере на 375 px и десктопе.
   Если трогали сцену Hero — проверить, что `three` не уехал в главный чанк.
+- GLSL — шаблонными строками, glslify в проекте нет и заводить его не надо.
+- Палитра Hero (`#070709` / `#FF2E2E`) намеренно своя, брендовая — `#0D0D0D` / `#FF4F00`.
 - `npm run lint` сломан (eslint не установлен) — не полагаться на него.
 - Контент — в `src/data/*.ts`, импорты — через alias `@/`.
 - Курсива в наборе шрифтов нет — `italic` в разметке быть не должно.

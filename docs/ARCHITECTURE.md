@@ -1,9 +1,10 @@
 # Архитектура — Vibe Engineering Landing
 
 Карта проекта для тех, кто (или что) заходит в репозиторий без контекста.
-Статус на 2026-08-05: ветка `main`, remote `github.com/txtbyvova-ui/vibeengineering`.
-Последняя крупная работа — контент-релиз v2 (новый копирайт, медиа в кейсах,
-SEO-обвязка), ветка `feat/content-v2`.
+Статус на 2026-08-10: ветка `main`, remote `github.com/txtbyvova-ui/vibeengineering`.
+Последняя крупная работа — сцена первого экрана: wireframe на барицентрических
+координатах и панель параметров шейдера (PR #8). До неё — 3D-воронка (PR #7),
+понятность главной и смена шрифтов (PR #6).
 
 ---
 
@@ -29,12 +30,15 @@ SEO-обвязка), ветка `feat/content-v2`.
 | Сборка | Vite 5 (`@vitejs/plugin-react`) | dev-сервер, prod-бандл, alias `@ → ./src` |
 | UI | React 18 + TypeScript 5.5 (`strict`) | 9 секций-компонентов, без роутера и state-менеджера |
 | Стили | Tailwind CSS 3.4 + PostCSS | дизайн-токены в конфиге, примитивы в `@layer components` |
-| Анимация | Framer Motion 11 | только entry/scroll-анимации, интерактивной анимации нет |
+| Анимация | Framer Motion 11 | только entry/scroll-анимации DOM |
+| 3D-сцена Hero | three 0.169 + @react-three/fiber 8 | **только ленивым чанком**, см. §10а. Единственные тяжёлые зависимости проекта |
+| Панель параметров | leva 0.10 | там же, в ленивом чанке; 70.5 kB gzip из 294.5 |
 | Шрифты | M PLUS Rounded 1c, IBM Plex Sans, JetBrains Mono | **самохостинг**: woff2 в `public/fonts`, `@font-face` в `src/index.css`. Сторонних CDN нет. Кириллица есть у всех трёх — см. §6.4 |
 | OG-карточка | Satori + `@resvg/resvg-js` | build-time, `npm run prebuild`; PNG в `public/og.png`, в git не коммитится. Шрифт карточки — вендоренный JetBrains Mono из [assets/fonts/](../assets/fonts/README.md), сети не требует |
 
-Runtime-зависимостей ровно три: `react`, `react-dom`, `framer-motion`.
-Ни роутера, ни fetch-слоя, ни аналитики.
+Runtime-зависимостей шесть: `react`, `react-dom`, `framer-motion` — в главном чанке;
+`three`, `@react-three/fiber`, `leva` — **только в ленивом чанке сцены Hero**
+и больше нигде. Ни роутера, ни fetch-слоя, ни аналитики.
 
 ## 3. Карта репозитория
 
@@ -54,8 +58,13 @@ vibeengineering/
 ├── docs/
 │   ├── ARCHITECTURE.md         # этот файл
 │   ├── BACKLOG.md              # приоритизированные технические долги
-│   ├── SPEC-hero-truss.md      # спецификация переделки Hero (реализована)
+│   ├── REPORT-hero-wireframe.md  # ДЕЙСТВУЮЩАЯ сцена Hero: wireframe + панель
+│   ├── REPORT-hero-funnel-3d.md  # 3D-воронка — предыдущая сцена
+│   ├── REPORT-hero-truss-max.md  # ферма Уоррена — сцена до неё
+│   ├── SPEC-hero-truss.md      # спецификация фермы (историческая)
 │   ├── REPORT-cases-rail.md    # отчёт по ленте кейсов
+│   ├── REPORT-clarity-2026-08-07.md  # понятность главной
+│   ├── REPORT-fonts-2026-08-08.md    # смена шрифтов
 │   └── REPORT-multi-review-2026-08-06.md  # отчёт мульти-ревью и починки
 ├── scripts/
 │   ├── generate-og.mjs         # OG-карточка (Satori + resvg), хук prebuild
@@ -76,10 +85,13 @@ vibeengineering/
     ├── index.css               # @layer base + components + utilities (prefers-reduced-motion)
     ├── vite-env.d.ts
     ├── types/index.ts          # CaseStudy, TeamMember, ProcessStep, ResponsiveImage, …
+    ├── shaders/
+    │   └── wireframe.ts        # GLSL строками (mattdesl/webgl-wireframes, MIT)
     ├── hooks/
     │   ├── useCountUp.ts       # count-up метрик, пишет textContent без ре-рендеров
-    │   ├── useFunnelLoop.ts    # владелец rAF 3D-сцены: троттл, пауза, watchdog
-    │   ├── useStructuralGrid.ts        # ферма на Canvas 2D — ПРЕДЫДУЩАЯ сцена Hero
+    │   ├── useSceneLoop.ts     # владелец rAF любой R3F-сцены: троттл, пауза, watchdog
+    │   ├── useWireframeGeometry.ts     # разындексация + барицентрика
+    │   ├── useStructuralGrid.ts        # ферма на Canvas 2D — сцена без импорта
     │   └── usePrefersReducedMotion.ts
     ├── data/                   # ВЕСЬ пользовательский текст и пути к медиа
     │   ├── hero.ts             # заголовок кусками, лид, CTA
@@ -92,12 +104,14 @@ vibeengineering/
     │   ├── team.ts             # 2 основателя
     │   ├── contact.ts          # финальный оффер, ссылки, реквизиты футера
     │   ├── clients.ts          # 7 брендов для marquee
-    │   ├── funnel.ts           # геометрия воронки и ручки; профиль общий 3D ↔ SVG
-    │   ├── structuralGrid.ts   # ручки фермы (предыдущая сцена Hero)
+    │   ├── heroWireframe.ts    # копирайт Redline + ручки wireframe-сцены
+    │   ├── funnel.ts           # воронка: профиль общий 3D ↔ SVG (сцена без импорта)
+    │   ├── structuralGrid.ts   # ручки фермы (сцена без импорта)
     │   └── nav.ts              # пункты меню, логотип, кнопка Telegram
     └── components/
         ├── Nav.tsx             # fixed + mix-blend-difference, реагирует на scrollY > 24
-        ├── Hero.tsx            # сцена + h1 + метрики + CTA, единственный h1 на странице
+        ├── HeroWireframe.tsx   # ДЕЙСТВУЮЩИЙ Hero: wireframe + оффер Redline
+        ├── Hero.tsx            # Hero с воронкой — цел, но из App.tsx не импортируется
         ├── Marquee.tsx         # бесконечная лента клиентов (CSS-анимация, не JS)
         ├── Services.tsx        # 4 направления: сайты, боты, веб-приложения, AI
         ├── USP.tsx             # 3 преимущества
@@ -108,10 +122,11 @@ vibeengineering/
         └── ui/
             ├── RevealText.tsx         # маска-раскрытие текста
             ├── HeroMetrics.tsx        # строка метрик с count-up
-            ├── HeroScene.tsx          # выбор 3D/SVG + ВЛАДЕЛЕЦ ленивого импорта
-            ├── ConversionFunnelCanvas.tsx  # r3f-сцена; ЕДИНСТВЕННЫЙ импортёр three
+            ├── WireframeHeroCanvas.tsx   # r3f wireframe + панель leva (ленивый чанк)
+            ├── HeroScene.tsx          # выбор 3D/SVG для воронки (без импорта)
+            ├── ConversionFunnelCanvas.tsx  # r3f-воронка (без импорта)
             ├── FunnelBlueprint.tsx    # статичный SVG-чертёж воронки, тот же профиль
-            ├── StructuralGridCanvas.tsx  # обёртка фермы (предыдущая сцена Hero)
+            ├── StructuralGridCanvas.tsx  # обёртка фермы (без импорта)
             ├── Picture.tsx            # <picture> AVIF → WebP → JPEG
             ├── LazyVideo.tsx          # видео по IntersectionObserver
             ├── CaseRail.tsx           # горизонтальная лента кейсов
@@ -313,7 +328,7 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 |---|---|
 | CSS-анимации (`marquee`, `pulseDot`), smooth scroll | медиаблок в `@layer utilities` [index.css](../src/index.css) |
 | Framer Motion (анимирует инлайн-стили через rAF) | `MotionConfig reducedMotion="user"` в [main.tsx](../src/main.tsx) |
-| 3D-сцена Hero | JS-проверка в [ui/HeroScene.tsx](../src/components/ui/HeroScene.tsx) — и не просто гасит анимацию, а **вообще не грузит `three`**: гейт стоит до `React.lazy`, вместо сцены рендерится статичный SVG-чертёж |
+| 3D-сцена Hero | JS-проверка в [HeroWireframe.tsx](../src/components/HeroWireframe.tsx): режим `frozen` — ровно один кадр, вращение и пунктир выключены, панель скрыта. ⚠️ `three` при этом всё равно грузится: у wireframe нет векторного фолбэка (см. §10а) |
 | Автоплей ролика кейса | собственная JS-проверка в [ui/LazyVideo.tsx](../src/components/ui/LazyVideo.tsx): вместо петли — постер. Контролы у плеера стоят **всегда**, независимо от настройки: ролик длиннее минуты, без механизма паузы это WCAG 2.2.2 |
 
 **Правило для нового кода:** любой новый источник движения вне CSS и Framer Motion
@@ -368,46 +383,71 @@ Tailwind не достаёт (`-webkit-text-stroke`, `::selection`). При см
 
 ## 10а. Сцена первого экрана
 
-Единственное место в проекте, где живёт тяжёлая зависимость, поэтому устройство
-описано здесь, а не только в отчёте.
+Единственное место в проекте, где живут тяжёлые зависимости (`three`,
+`@react-three/fiber`, `leva`), поэтому устройство описано здесь, а не только
+в отчёте.
+
+**Действующая сцена — wireframe «Redline Tech»** на барицентрических координатах
+(с 2026-08-10, PR #8). Разбор и замеры: [REPORT-hero-wireframe.md](REPORT-hero-wireframe.md).
 
 ```
-Hero.tsx
-  └── HeroScene.tsx            ← решает ЧТО показать; гейт стоит ДО lazy
-        ├── FunnelBlueprint.tsx        статичный SVG (по умолчанию и как fallback)
-        └── lazy(ConversionFunnelCanvas)   ← весь three сидит здесь
-              └── useFunnelLoop.ts     владеет rAF: троттл, пауза, watchdog
+App.tsx
+  └── HeroWireframe.tsx        ← решает РЕЖИМ; сцена монтируется после `load`
+        └── lazy(WireframeHeroCanvas)   ← здесь three + leva
+              ├── shaders/wireframe.ts       GLSL строками, без glslify
+              ├── useWireframeGeometry.ts    разындексация + барицентрика
+              └── useSceneLoop.ts            владеет rAF: троттл, пауза, watchdog
 ```
 
-| посетитель | сцена | грузится ли three |
-|---|---|---|
-| десктоп, `(hover: hover) and (pointer: fine)` | 3D-воронка | да, ~218 kB **после `load`** |
-| тач-устройство | SVG-чертёж | **нет** |
-| `prefers-reduced-motion: reduce` | SVG-чертёж | **нет** |
+| посетитель | режим | панель | пунктир | вращение |
+|---|---|---|---|---|
+| десктоп ≥ 768 px | `full` | да | да | да |
+| ширина < 768 px | `quiet` | нет | нет | да, медленное |
+| `prefers-reduced-motion` | `frozen` | нет | нет | **нет**, один кадр |
 
-Три вещи, которые легко сломать, не заметив:
+⚠️ **`three` грузится во ВСЕХ режимах, включая мобильный.** У wireframe нет
+векторного фолбэка, а постановка требует оставить фигуру декорацией. Цена
+замерена: мобильный первый экран **529.9 kB** против 243.5 kB на предыдущей
+сцене. Это открытый вопрос к владельцу, а не решённый — [отчёт §6](REPORT-hero-wireframe.md).
 
-1. **Гейт обязан стоять до `React.lazy`.** Перенос проверки внутрь ленивого
-   компонента заставит телефон скачать `three`, чтобы тут же показать SVG.
-2. **Профиль воронки один** — `funnelRadius` в [data/funnel.ts](../src/data/funnel.ts).
-   3D и SVG считаются из него, поэтому силуэт не может разъехаться между видами.
-3. **`frameloop="never"`.** R3F своего rAF не заводит: кадры выдаёт `useFunnelLoop`
-   вызовом `advance()`. Отсюда и троттл, и пауза по `visibilitychange`
-   и `IntersectionObserver`, и односторонняя деградация dpr → гашение цикла.
+Что легко сломать, не заметив:
+
+1. **Барицентрика требует разындексированной геометрии.** Вершины нельзя
+   переиспользовать между треугольниками — `toNonIndexed()` обязателен, и он
+   умножает число вершин на три.
+2. **`side: DoubleSide`** — без задних граней `gl_FrontFacing` всегда `true`
+   и backface coloring не существует. **`depthWrite: false`** — иначе передние
+   грани перекрывают задние и сквозной режим перестаёт быть сквозным.
+3. **Объект uniform'ов создаётся один раз, дальше мутируется `.value`.** Новый
+   объект на каждый рендер = перекомпиляция `ShaderMaterial` на каждое движение
+   ползунка.
+4. **`frameloop="never"`.** R3F своего rAF не заводит: кадры выдаёт `useSceneLoop`
+   вызовом `advance()`. Отсюда троттл, пауза по `visibilitychange`
+   и `IntersectionObserver`, односторонняя деградация dpr → гашение цикла.
    При остановке на канве остаётся последний кадр — страница не «фризится».
+   ⚠️ `advance()` **глобален** и продвигает все смонтированные R3F-корни: двух
+   живых сцен на странице быть не должно.
+5. **`leva` самомонтирует панель в `body`,** если не отрендерить `<Leva/>` явно.
+   На мобиле она перекрыла бы текст — там рендерится `<Leva hidden />`.
+6. **GLSL лежит шаблонными строками, glslify в проекте нет.** Оригинальные
+   шейдеры mattdesl используют `#pragma glslify: require`; они переписаны так,
+   чтобы сборка не зависела ни от плагина, ни от Babel.
 
-Низ сцены **измеряется** по нижней кромке h1 (`ResizeObserver` +
-`document.fonts.ready`), а не задаётся процентом: заголовок задан в `vw` и меняет
-высоту от вьюпорта, от подмены шрифта и от правок копирайта. Проценты в классах
-оставлены запасным вариантом, если h1 измерить не удалось.
+### Предыдущие сцены — в дереве, но без импорта
 
-Предыдущая сцена — ферма Уоррена на Canvas 2D
-([useStructuralGrid.ts](../src/hooks/useStructuralGrid.ts),
-[ui/StructuralGridCanvas.tsx](../src/components/ui/StructuralGridCanvas.tsx),
-[data/structuralGrid.ts](../src/data/structuralGrid.ts)) — осталась в дереве,
-но **ни из чего не импортируется** и в бандл не попадает. Переключение обратно —
-одна строка импорта в `Hero.tsx`; обе сцены принимают одни и те же ref'ы.
-Разбор и замеры: [REPORT-hero-truss-max.md](REPORT-hero-truss-max.md).
+Обе целы и ни из чего не импортируются, то есть в бандл не попадают.
+Переключение — одна строка импорта в `App.tsx` (`HeroWireframe` → `Hero`)
+и, для фермы, в `Hero.tsx`.
+
+| сцена | файлы | разбор |
+|---|---|---|
+| 3D-воронка конверсии | `HeroScene.tsx`, `ConversionFunnelCanvas.tsx`, `FunnelBlueprint.tsx`, `data/funnel.ts` | [REPORT-hero-funnel-3d.md](REPORT-hero-funnel-3d.md) |
+| Ферма Уоррена, Canvas 2D | `useStructuralGrid.ts`, `StructuralGridCanvas.tsx`, `data/structuralGrid.ts` | [REPORT-hero-truss-max.md](REPORT-hero-truss-max.md) |
+
+У воронки был приём, которого у wireframe нет: **гейт до `React.lazy`**, поэтому
+телефон не скачивал `three` вовсе, и **общий профиль `funnelRadius`** для 3D
+и SVG — силуэт не мог разъехаться между видами. Если мобильный вес станет
+важнее фигуры, возвращать надо именно эти два приёма.
 
 ## 11. Навигация по коду: RAG
 
