@@ -2,7 +2,10 @@ import { useRef } from "react";
 import { motion } from "framer-motion";
 import RevealText from "@/components/ui/RevealText";
 import HeroMetrics from "@/components/ui/HeroMetrics";
-import StructuralGridCanvas from "@/components/ui/StructuralGridCanvas";
+// Сцена Hero. Ферма (StructuralGridCanvas) осталась в дереве — переключение
+// обратно это одна строка здесь; см. docs/REPORT-hero-truss-max.md.
+// Обе сцены принимают одни и те же ref'ы, поэтому подмена ничего не ломает.
+import HeroScene from "@/components/ui/HeroScene";
 import { hero } from "@/data/hero";
 import type { HeadlinePart } from "@/data/hero";
 
@@ -20,6 +23,10 @@ const lines = hero.headline.reduce<HeadlinePart[][]>((acc, part) => {
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null);
+  // Бокс h1 — единственный замер, по которому сцена находит свою нижнюю
+  // границу. Процент здесь сломался бы: h1 прижат mt-auto к низу, задан в vw
+  // и меняет высоту от правок копирайта.
+  const headlineRef = useRef<HTMLHeadingElement>(null);
   let partIndex = 0;
 
   return (
@@ -32,7 +39,7 @@ export default function Hero() {
       // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
       className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
     >
-      <StructuralGridCanvas hostRef={heroRef} className="z-0" />
+      <HeroScene hostRef={heroRef} headlineRef={headlineRef} className="z-0" />
 
       {/* Micro-label */}
       <motion.div
@@ -51,7 +58,10 @@ export default function Hero() {
       <div className="relative z-10 mt-auto">
         {/* Ниже md заголовок переносится по словам, и при leading < 1 маски
             RevealText срезают глифы соседних строк — держим здесь запас. */}
-        <h1 className="font-display text-[11vw] font-semibold leading-[1.08] tracking-display md:text-[7.4vw] md:leading-[0.92]">
+        <h1
+          ref={headlineRef}
+          className="font-display text-[11vw] font-semibold leading-[1.08] tracking-display md:text-[7.4vw] md:leading-[0.92]"
+        >
           {lines.map((line, li) => (
             <span key={li} className="block">
               {line.map((part) => {

@@ -106,15 +106,6 @@
     --accent: #ff4f00;
   }
 
-  @keyframes gridShift {
-    0% {
-      background-position: 0 0, 0 0;
-    }
-    100% {
-      background-position: 4rem 4rem, 4rem 4rem;
-    }
-  }
-
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -148,7 +139,11 @@
 }
 
 @layer components {
-  /* Fixed animated background grid */
+  /* Fixed background grid.
+     Анимация background-position снята намеренно: слой fixed на весь экран,
+     она не композиторная и заставляет перерисовывать всё, что лежит поверх.
+     Замерено на Intel HD 520: с работающей канвой Hero это 22 fps против 50.
+     Плитка осталась статичной — визуально теряется только незаметный дрейф. */
   .bg-grid {
     position: fixed;
     inset: 0;
@@ -158,7 +153,6 @@
       linear-gradient(to right, rgba(136, 136, 136, 0.03) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(136, 136, 136, 0.03) 1px, transparent 1px);
     background-size: 4rem 4rem;
-    animation: gridShift 20s linear infinite;
   }
 
   /* Hollow outline text that fills with accent on hover */
@@ -237,7 +231,9 @@
   /* Блок обязан лежать в utilities: слой Tailwind-утилит идёт после
      пользовательских правил, и голое правило перебили бы .animate-marquee
      и .animate-pulseDot.
-     Canvas сюда НЕ попадает — у него своя JS-проверка в useStructuralGrid. */
+     Сцена Hero сюда НЕ попадает — она на WebGL, и медиазапрос её не видит:
+     решение принимает HeroScene своей проверкой matchMedia и при reduce
+     вообще не грузит three, показывая статичный SVG-чертёж. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
