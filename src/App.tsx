@@ -1,5 +1,7 @@
 import Nav from "@/components/Nav";
-import Hero from "@/components/Hero";
+// Прототип Redline: Hero заменён на wireframe-сцену. Предыдущий Hero с воронкой
+// остался в дереве — возврат это одна строка здесь. См. docs/REPORT-hero-wireframe.md.
+import Hero from "@/components/HeroWireframe";
 import Marquee from "@/components/Marquee";
 import Services from "@/components/Services";
 import USP from "@/components/USP";

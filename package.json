@@ -17,6 +17,7 @@
   "dependencies": {
     "@react-three/fiber": "^8.18.0",
     "framer-motion": "^11.3.24",
+    "leva": "^0.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.169.0"
