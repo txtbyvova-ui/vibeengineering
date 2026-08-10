@@ -1,6 +1,7 @@
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
+import Services from "@/components/Services";
 import USP from "@/components/USP";
 import Cases from "@/components/Cases";
 import Process from "@/components/Process";
@@ -15,6 +16,7 @@ export default function App() {
       <main>
         <Hero />
         <Marquee />
+        <Services />
         <USP />
         <Cases />
         <Process />

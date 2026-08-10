@@ -2,6 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Шрифты — со своего домена, из `public/fonts`, а не с чужих CDN.
+ *
+ * До 2026-08-08 сюда с двух сторонних CDN (fonts.googleapis.com и
+ * api.fontshare.com) ехали Clash Display и Space Grotesk, и **ни один из них
+ * не имел кириллицы** — весь русский текст, то есть почти вся страница,
+ * рендерился системным `sans-serif`. Платили байтами и двумя TLS-рукопожатиями
+ * за типографику, которой посетитель не видел.
+ *
+ * Теперь три семейства, у каждого кириллица проверена по `cmap`:
+ *   M PLUS Rounded 1c — заголовки, IBM Plex Sans — текст, JetBrains Mono — подписи.
+ *
+ * Начертаний ровно столько, сколько нужно, а не сколько бывает:
+ *   M PLUS 500 и 700. Запрошенный где-то в разметке вес 400 подберётся к 500,
+ *   600 — к 700 по стандартным правилам подбора начертания в CSS. Отдельные
+ *   файлы под них стоили бы ещё 57 kB ради разницы, которую не видно.
+ *   IBM Plex и JetBrains Mono — по одному 400: жирнее в этих шрифтах
+ *   на странице ничего не набрано.
+ *
+ * ⚠️ Курсива нет ни у M PLUS Rounded 1c, ни в наборе вообще — и `italic`
+ * в разметке быть не должно: браузер синтезирует наклон сам, и на крупном
+ * кегле это видно. Курсив снят со всех четырёх мест 2026-08-08.
+ *
+ * `unicode-range` не украшение: пока в тексте нет латиницы, латинский файл
+ * не скачивается, и наоборот. Лицензии — рядом с файлами, `public/fonts/OFL-*.txt`.
+ */
+@font-face {
+  font-family: "M PLUS Rounded 1c";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/mplus-rounded-1c-500-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "M PLUS Rounded 1c";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/mplus-rounded-1c-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "M PLUS Rounded 1c";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/mplus-rounded-1c-700-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "M PLUS Rounded 1c";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/mplus-rounded-1c-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-400-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-sans-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-400-cyrillic.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @layer base {
   :root {
     --accent: #ff4f00;

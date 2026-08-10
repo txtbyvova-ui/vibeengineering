@@ -16,18 +16,26 @@ export default function HeroMetrics({ className = "" }: { className?: string }) 
   return (
     <div
       ref={ref}
-      className={`grid min-h-[92px] grid-cols-3 gap-4 border-t border-hairline pt-6 md:gap-8 ${className}`}
+      className={`grid min-h-[92px] grid-cols-3 gap-3 border-t border-hairline pt-6 sm:gap-4 md:gap-8 ${className}`}
     >
       {HERO_METRICS.map((metric) => (
         <div key={metric.label}>
-          <div className="font-mono text-2xl font-medium tracking-tight text-textMain md:text-4xl">
+          {/* Без font-medium: у JetBrains Mono самохостится один вес 400,
+              и запрос 500 всё равно подобрал бы его — класс бы только врал. */}
+          <div className="font-mono text-2xl tracking-tight text-textMain md:text-4xl">
             <span data-countup>{metric.value}</span>
             {metric.suffix}
           </div>
-          {/* break-words обязателен: колонка на 320 px — 83 px, а неразрывное
-              «реализованных» при tracking 0.18em занимает 112 px и наезжало
-              глифами на текст соседней метрики (замерено 12.9 px наложения). */}
-          <div className="mono-label mt-2 block break-words">{metric.label}</div>
+          {/* Кегль и трекинг ниже sm — не косметика, а единственное, что даёт
+              «реализованных» (13 знаков) влезть в колонку целиком: при 11 px /
+              0.18em слово занимает 111 px против 83 px колонки на 320 px,
+              и break-words рвал его посреди — «РЕАЛИЗОВАНН|ЫХ». При 9 px /
+              0.06em то же слово — 77 px, помещается с запасом.
+              break-words оставлен страховкой на случай слова ещё длиннее:
+              без него глифы наезжали на соседнюю метрику (замерено 12.9 px). */}
+          <div className="mono-label mt-2 block break-words text-[9px] tracking-[0.06em] sm:text-[10px] sm:tracking-[0.12em] md:text-[11px] md:tracking-[0.18em]">
+            {metric.label}
+          </div>
         </div>
       ))}
     </div>

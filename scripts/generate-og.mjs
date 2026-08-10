@@ -7,27 +7,27 @@
  *   для одностраничника не варьируется. Satori + resvg дают тот же результат
  *   на этапе сборки и работают на любом статическом хостинге.
  *
- * ВАЖНО про шрифты: у Clash Display и Space Grotesk НЕТ кириллицы (проверено:
- *   0 кодпоинтов в диапазоне U+0400–U+04FF). Поэтому латиница на карточке набрана
- *   Clash Display, а весь русский текст и знак ◆ — JetBrains Mono, единственным
- *   шрифтом дизайн-системы с кириллическим покрытием.
- *
- * ОТКУДА БЕРУТСЯ ШРИФТЫ — и почему по-разному. Разбор лицензий и провенанс —
- * в assets/fonts/README.md, коротко:
+ * ОТКУДА БЕРУТСЯ ШРИФТЫ — и почему по-разному:
  *
  *   JetBrains Mono — SIL OFL 1.1, редистрибуция разрешена прямо. Лежит в git
- *   (assets/fonts/), читается с диска. Сети не требует.
+ *   (assets/fonts/), читается с диска. Сети не требует. Несёт кириллицу и ◆.
  *
- *   Clash Display — ITF Free Font License, и она запрещает «uploading them in
- *   a public server». Репозиторий публичный, поэтому закоммитить TTF нельзя:
- *   его берём по Fontshare API — единственный путь доставки, который лицензия
- *   называет штатным, — и кладём в локальный кэш (.cache, вне git; §01 EULA
- *   разрешает резервные копии под собственное использование).
+ *   M PLUS Rounded 1c — заголовочный шрифт сайта с 2026-08-08. Тоже OFL, но
+ *   полный TTF семейства весит мегабайты (это японский шрифт с иероглифами),
+ *   и коммитить его в репозиторий незачем: Google Fonts отдаёт сабсет
+ *   latin+cyrillic на 103 kB, его и берём в локальный кэш (.cache, вне git).
+ *   Веб-версия сайта при этом self-hosted — public/fonts, см. src/index.css.
  *
- * Отсюда правило отказа: **нехватка Clash Display сборку НЕ валит.** Латинский
- * заголовок в этом случае набирается JetBrains Mono, карточка остаётся валидной,
- * а в лог уходит громкое предупреждение. Деплой не должен падать из-за
- * недоступности зарубежного CDN — при том что раньше падал ровно так.
+ * Отсюда правило отказа: **нехватка заголовочного шрифта сборку НЕ валит.**
+ * Слова VIBE / ENGINEERING в этом случае набираются JetBrains Mono, карточка
+ * остаётся валидной, а в лог уходит громкое предупреждение. Деплой не должен
+ * падать из-за недоступности зарубежного CDN — при том что раньше падал.
+ *
+ * ⚠️ До 2026-08-08 здесь стоял Clash Display с Fontshare, и у него, как
+ * и у Space Grotesk, НЕ БЫЛО кириллицы (0 кодпоинтов в U+0400–U+04FF).
+ * У M PLUS Rounded 1c она есть — 100 кодпоинтов в сабсете, проверено разбором
+ * cmap, — но русские строки карточки оставлены на JetBrains Mono: он вендорен
+ * и доступен всегда, а заголовочный шрифт по определению может не приехать.
  */
 
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
@@ -57,8 +57,10 @@ const TEXT = "#F4F4F0";
 const MUTED = "#888888";
 const HAIRLINE = "rgba(255,255,255,0.10)";
 
-/** Достаёт первый .ttf из CSS шрифтового CDN. Legacy User-Agent заставляет
- *  Google Fonts отдать полный TTF вместо woff2 — satori woff2 не понимает. */
+/** Достаёт первый .ttf из CSS шрифтового CDN.
+ *  UA решает формат ответа, и это не мелочь: современному Chrome Google Fonts
+ *  отдаёт woff2 (satori его не понимает), IE-подобному — eot (тем более),
+ *  и только старый Android получает настоящий truetype. Проверено 2026-08-08. */
 async function resolveTtfUrl(cssUrl, userAgent) {
   const res = await fetch(cssUrl, { headers: { "User-Agent": userAgent } });
   if (!res.ok) throw new Error(`${cssUrl} → HTTP ${res.status}`);
@@ -124,8 +126,10 @@ async function loadFont(cacheKey, cssUrl, userAgent) {
   return buf;
 }
 
-const UA_MODERN =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36";
+/** Единственный UA, которому Google Fonts отдаёт .ttf. См. resolveTtfUrl. */
+const UA_TTF =
+  "Mozilla/5.0 (Linux; U; Android 4.3; en-us; Nexus 4 Build/JOP40D) " +
+  "AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
 
 /** Шрифт из git. Отсутствие — ошибка сборки: файл обязан быть в репозитории. */
 async function loadVendored(file) {
@@ -173,9 +177,9 @@ function card(displayFamily) {
         ],
       ),
 
-      // Заголовок — латиница, поэтому Clash Display работает. Если его не удалось
-      // получить (CDN недоступен, а кэша ещё нет), сюда приезжает JetBrains Mono:
-      // карточка выглядит иначе, но она есть, и сборка не падает.
+      // Заголовок. Если шрифт не удалось получить (CDN недоступен, а кэша ещё
+      // нет), сюда приезжает JetBrains Mono: карточка выглядит иначе,
+      // но она есть, и сборка не падает.
       h(
         "div",
         { display: "flex", flexDirection: "column", marginTop: "auto" },
@@ -260,23 +264,24 @@ async function main() {
 
   // Необязательный — по сети. Коммитить его лицензия не разрешает (см. шапку),
   // поэтому единственная защита от падения деплоя здесь — не падать.
-  let clash = null;
+  let display = null;
   try {
-    clash = await loadFont(
-      "clash-display-600",
-      "https://api.fontshare.com/v2/css?f%5B%5D=clash-display@600",
-      UA_MODERN,
+    display = await loadFont(
+      "mplus-rounded-1c-700",
+      "https://fonts.googleapis.com/css?family=M+PLUS+Rounded+1c:700&subset=cyrillic,latin",
+      UA_TTF,
     );
   } catch (err) {
     console.warn(
-      `og: Clash Display недоступен (${err.message}) — заголовок набираю JetBrains Mono.`,
+      `og: M PLUS Rounded 1c недоступен (${err.message}) — заголовок набираю JetBrains Mono.`,
     );
     console.warn("og: карточка будет собрана, но не в брендовой типографике.");
   }
 
-  const displayFamily = clash ? "Clash Display" : "JetBrains Mono";
+  const displayFamily = display ? "M PLUS Rounded 1c" : "JetBrains Mono";
   const fonts = [{ name: "JetBrains Mono", data: mono, weight: 500, style: "normal" }];
-  if (clash) fonts.push({ name: "Clash Display", data: clash, weight: 600, style: "normal" });
+  if (display)
+    fonts.push({ name: "M PLUS Rounded 1c", data: display, weight: 700, style: "normal" });
 
   const svg = await satori(card(displayFamily), { width: WIDTH, height: HEIGHT, fonts });
 
@@ -298,6 +303,6 @@ main().catch((err) => {
   // отказ рендера. Недоступность зарубежного CDN сборку больше не валит —
   // раньше валила, и деплой падал целиком из-за необязательной картинки.
   console.error("og: не удалось сгенерировать карточку —", err.message);
-  console.error(`og: шрифты в git — ${VENDORED}; кэш Clash Display — ${CACHE}.`);
+  console.error(`og: шрифты в git — ${VENDORED}; кэш заголовочного — ${CACHE}.`);
   process.exit(1);
 });
