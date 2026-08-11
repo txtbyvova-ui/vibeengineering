@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { REDLINE, WIRE, heroWireframe } from "@/data/heroWireframe";
+import { WIRE, heroWireframe } from "@/data/heroWireframe";
 import type { WireMode } from "@/components/ui/WireframeHeroCanvas";
 
 const WireframeHeroCanvas = lazy(() => import("@/components/ui/WireframeHeroCanvas"));
@@ -32,20 +32,24 @@ const Q_REDUCE = "(prefers-reduced-motion: reduce)";
 export default function HeroWireframe() {
   const heroRef = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<WireMode | null>(null);
+  const [showPanel, setShowPanel] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const mqReduce = window.matchMedia(Q_REDUCE);
     const mqNarrow = window.matchMedia(`(max-width: ${WIRE.mobileMaxWidth - 1}px)`);
+    const mqPanel = window.matchMedia(`(min-width: ${WIRE.panelMinWidth}px)`);
     const abort = new AbortController();
     let timer = 0;
 
     const decide = () => {
       setMode(mqReduce.matches ? "frozen" : mqNarrow.matches ? "quiet" : "full");
+      setShowPanel(!mqReduce.matches && mqPanel.matches);
     };
     decide();
     mqReduce.addEventListener("change", decide, { signal: abort.signal });
     mqNarrow.addEventListener("change", decide, { signal: abort.signal });
+    mqPanel.addEventListener("change", decide, { signal: abort.signal });
 
     // Сцена монтируется после первого paint: иначе загрузка и компиляция
     // шейдеров встают в один кадр с отрисовкой первого экрана.
@@ -65,14 +69,20 @@ export default function HeroWireframe() {
     <section
       id="top"
       ref={heroRef}
-      // Фон секции свой: палитра Redline темнее брендовой и применяется только
-      // здесь. isolate — страховка от улёта канвы в корневой стекинг-контекст.
-      className="relative isolate flex min-h-svh flex-col justify-between px-5 pb-10 pt-32 md:px-10 md:pt-40"
-      style={{ backgroundColor: REDLINE.bg }}
+      // bg-bg — общий токен палитры: собственного фона у Hero больше нет,
+      //   прежний форк #070709 давал шов на стыке с Marquee.
+      // isolate — страховка от улёта канвы в корневой стекинг-контекст.
+      // Высота: на десктопе min-h-svh оставлен намеренно — первый экран обязан
+      //   занимать вьюпорт, и контента там на 740 из 900 px. На мобиле контент
+      //   экран НЕ заполняет, и justify-between растягивал его, оставляя 170 px
+      //   дыры между строкой логов и заголовком — поэтому там 70svh.
+//   Порог именно lg, а не md: на 768x1024 (планшет портретом) при
+//   min-h-svh дыра составляла замеренные 464 px.
+      className="relative isolate flex min-h-[70svh] flex-col justify-between bg-bg px-5 pb-12 pt-24 md:px-10 md:pt-28 lg:min-h-svh"
     >
       {mounted && mode ? (
         <Suspense fallback={null}>
-          <WireframeHeroCanvas hostRef={heroRef} mode={mode} />
+          <WireframeHeroCanvas hostRef={heroRef} mode={mode} showPanel={showPanel} />
         </Suspense>
       ) : null}
 
@@ -83,16 +93,17 @@ export default function HeroWireframe() {
         transition={{ duration: 0.8, ease: EASE }}
         className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1"
       >
-        <span className="h-2 w-2 shrink-0 animate-pulseDot rounded-full" style={{ backgroundColor: REDLINE.stroke }} />
+        <span className="h-2 w-2 shrink-0 animate-pulseDot rounded-full bg-accent" />
         {heroWireframe.logLine.map((part, i) => (
           <span
             key={part}
             lang="en"
-            className="font-mono text-[11px] uppercase tracking-[0.18em]"
-            style={{ color: i === 0 ? REDLINE.stroke : "#77777f" }}
+            className={`font-mono text-[11px] uppercase tracking-[0.18em] ${
+              i === 0 ? "text-accent" : "text-textMuted"
+            }`}
           >
             {part}
-            {i === 0 ? <span className="ml-3 text-[#3a3a42]">·</span> : null}
+            {i === 0 ? <span className="ml-3 text-textMuted/50">·</span> : null}
           </span>
         ))}
       </motion.div>
@@ -122,15 +133,14 @@ export default function HeroWireframe() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.9, delay: 0.44, ease: EASE }}
-          className="mt-9 space-y-1.5 border-t pt-6"
-          style={{ borderColor: "rgba(255,46,46,0.18)" }}
+          className="mt-9 space-y-1.5 border-t border-accent/20 pt-6"
         >
           {heroWireframe.metrics.map((m) => (
             <li key={m.tag + m.value} className="flex items-baseline gap-2 font-mono text-[13px]">
-              <span lang="en" className="shrink-0" style={{ color: REDLINE.stroke }}>
+              <span lang="en" className="shrink-0 text-accent">
                 [&nbsp;{m.tag}&nbsp;]
               </span>
-              <span aria-hidden className="shrink-0 text-[#4a4a52]">
+              <span aria-hidden className="shrink-0 text-textMuted/70">
                 &gt;
               </span>
               <span className="text-textMain">{m.value}</span>
@@ -148,8 +158,10 @@ export default function HeroWireframe() {
             href={heroWireframe.cta.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-black transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{ backgroundColor: REDLINE.stroke, outlineColor: REDLINE.stroke }}
+            // Подпись светлая, а не чёрная: замер контраста по WCAG на новой палитре
+            // даёт #050505 на #D90429 = 3.88:1 (ниже AA 4.5 для текста этого
+            // кегля), а #F5F5F7 на нём же = 4.82:1 и проходит.
+            className="inline-flex items-center gap-3 bg-accent px-8 py-4 font-mono text-sm uppercase tracking-[0.14em] text-textMain transition-opacity hover:opacity-85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
           >
             {heroWireframe.cta.label}
             <span aria-hidden>→</span>

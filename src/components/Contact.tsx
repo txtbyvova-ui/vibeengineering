@@ -8,7 +8,7 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="border-t border-hairline px-5 pt-24 md:px-10 md:pt-40"
+      className="border-t border-hairline px-5 pt-16 md:px-10 md:pt-24"
     >
       <motion.h2
         initial={{ opacity: 0, y: 30 }}

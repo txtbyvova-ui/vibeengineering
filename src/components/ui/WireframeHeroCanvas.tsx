@@ -3,7 +3,8 @@ import type { RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Leva, useControls } from "leva";
 import { Color, DoubleSide, Mesh, ShaderMaterial } from "three";
-import { REDLINE, WIRE, heroWireframe, type WireGeometryKind } from "@/data/heroWireframe";
+import { WIRE, WIRE_COLOR, heroWireframe, type WireGeometryKind } from "@/data/heroWireframe";
+import { PALETTE } from "@/data/palette";
 import { useSceneLoop } from "@/hooks/useSceneLoop";
 import { useWireframeGeometry } from "@/hooks/useWireframeGeometry";
 import { WIREFRAME_FRAG, WIREFRAME_VERT } from "@/shaders/wireframe";
@@ -28,6 +29,11 @@ interface Props {
    * `frozen` — ровно один кадр, ничего не двигается (prefers-reduced-motion).
    */
   mode: WireMode;
+  /**
+   * Показывать панель. Отдельный флаг, а не производное от режима: планшету
+   * анимация не мешает, а ползунки наезжают на заголовок — пороги развязаны.
+   */
+  showPanel: boolean;
 }
 
 interface WireParams {
@@ -79,9 +85,9 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
       squeeze: { value: WIRE.squeeze as boolean },
       squeezeMin: { value: WIRE.squeezeMin as number },
       squeezeMax: { value: WIRE.squeezeMax as number },
-      stroke: { value: new Color(REDLINE.stroke) },
-      strokeBack: { value: new Color(REDLINE.strokeBack) },
-      fill: { value: new Color(REDLINE.fill) },
+      stroke: { value: new Color(WIRE_COLOR.stroke) },
+      strokeBack: { value: new Color(WIRE_COLOR.strokeBack) },
+      fill: { value: new Color(WIRE_COLOR.fill) },
     }),
     [],
   );
@@ -142,16 +148,16 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
 /** Тёмная тема панели под палитру Redline и моно-шрифт проекта. */
 const LEVA_THEME = {
   colors: {
-    elevation1: REDLINE.bg,
-    elevation2: "rgba(10,10,13,0.86)",
-    elevation3: "#17171c",
-    accent1: REDLINE.stroke,
-    accent2: REDLINE.stroke,
-    accent3: REDLINE.strokeBack,
+    elevation1: PALETTE.bg,
+    elevation2: "rgba(17,17,19,0.88)",
+    elevation3: PALETTE.surface,
+    accent1: PALETTE.accent,
+    accent2: PALETTE.accent,
+    accent3: PALETTE.accentMuted,
     highlight1: "#77777f",
     highlight2: "#b9b9c2",
-    highlight3: "#f4f4f0",
-    vivid1: REDLINE.stroke,
+    highlight3: PALETTE.textMain,
+    vivid1: PALETTE.accent,
   },
   fonts: { mono: "'JetBrains Mono', ui-monospace, monospace", sans: "'JetBrains Mono', monospace" },
   fontSizes: { root: "10px" },
@@ -162,11 +168,12 @@ const LEVA_THEME = {
 };
 
 /**
- * Маска канвы. Слева заголовок, поэтому там фигура гасится; полная
- * непрозрачность начинается правее самой длинной строки оффера.
+ * Маска канвы гасит ПРАВЫЙ край — там висит панель параметров, и проволока
+ * не должна лезть под ползунки. Раньше гасился левый, потому что фигура стояла
+ * справа; знак сдвига (`WIRE.offsetXRatio`) и сторона маски связаны жёстко.
  */
 const SCENE_MASK =
-  "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.10) 24%, rgba(0,0,0,0.55) 42%, #000 56%)";
+  "linear-gradient(to left, transparent 0%, rgba(0,0,0,0.12) 16%, rgba(0,0,0,0.6) 30%, #000 44%)";
 
 const GEOMETRY_OPTIONS: Record<string, WireGeometryKind> = {
   TorusKnot: "torusKnot",
@@ -176,7 +183,7 @@ const GEOMETRY_OPTIONS: Record<string, WireGeometryKind> = {
 
 // ── корень ──────────────────────────────────────────────────────────────────
 
-export default function WireframeHeroCanvas({ hostRef, mode }: Props) {
+export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props) {
   const params = useControls({
     geometry: { value: WIRE.geometry, options: GEOMETRY_OPTIONS, label: "geometry" },
     thickness: {
@@ -212,7 +219,14 @@ export default function WireframeHeroCanvas({ hostRef, mode }: Props) {
         className="pointer-events-none absolute inset-0 z-0"
         // Левый край гасим: там оффер, и он обязан выигрывать у фона.
         // На мобиле фигура лежит за всем текстом, поэтому там гасим целиком слабее.
-        style={{ maskImage: SCENE_MASK, WebkitMaskImage: SCENE_MASK, opacity: mode === "quiet" ? 0.5 : 1 }}
+        style={{
+          maskImage: SCENE_MASK,
+          WebkitMaskImage: SCENE_MASK,
+          // Фигура стоит слева-в-центре, то есть прямо под заголовком.
+          // Приглушение — то, чем оффер выигрывает у фона: без него
+          // проволока спорит с h1 за внимание.
+          opacity: mode === "quiet" ? 0.42 : 0.58,
+        }}
       >
         <Canvas
           frameloop={mode === "frozen" ? "demand" : "never"}
@@ -224,15 +238,15 @@ export default function WireframeHeroCanvas({ hostRef, mode }: Props) {
         </Canvas>
       </div>
 
-      {mode === "full" ? (
+      {showPanel ? (
         <div className="pointer-events-auto absolute right-5 top-28 z-20 w-[228px] md:right-10 md:top-32">
-          <div className="mb-1.5 flex items-baseline justify-between border-b border-[#FF2E2E]/25 pb-1.5">
-            <span lang="en" className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#FF2E2E]">
+          <div className="mb-1.5 flex items-baseline justify-between border-b border-accent/25 pb-1.5">
+            <span lang="en" className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
               {heroWireframe.panelTitle}
             </span>
           </div>
           <Leva fill titleBar={false} theme={LEVA_THEME} />
-          <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-[#77777f]">
+          <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-textMuted">
             {heroWireframe.panelNote}
           </p>
         </div>

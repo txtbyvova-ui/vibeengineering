@@ -102,8 +102,16 @@
 }
 
 @layer base {
+  /* Палитра «Leica Racing». Дублирует src/data/palette.ts и colors
+     в tailwind.config.js — там же разбор, почему дубль неизбежен.
+     Здесь переменные нужны там, куда Tailwind не достаёт:
+     -webkit-text-stroke, ::selection, inline-стили сцены. */
   :root {
-    --accent: #ff4f00;
+    --bg: #050505;
+    --surface: #111113;
+    --accent: #d90429;
+    --accent-muted: #8d081e;
+    --text-main: #f5f5f7;
   }
 
   * {
@@ -122,7 +130,7 @@
 
   ::selection {
     background: var(--accent);
-    color: #0d0d0d;
+    color: var(--bg);
   }
 
   /* Hidden scrollbar */
@@ -194,14 +202,14 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: #f4f4f0;
+    background: var(--text-main);
     transform: scaleY(0);
     transform-origin: bottom;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: -1;
   }
   .btn-fill:hover {
-    color: #0d0d0d;
+    color: var(--bg);
   }
   .btn-fill:hover::before {
     transform: scaleY(1);

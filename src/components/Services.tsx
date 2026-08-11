@@ -15,7 +15,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
  */
 export default function Services() {
   return (
-    <section id="services" className="px-5 py-24 md:px-10 md:py-40">
+    <section id="services" className="px-5 py-16 md:px-10 md:py-24">
       <div className="mb-6 flex items-end justify-between border-b border-hairline pb-6">
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{servicesHeading.title}</RevealText>
