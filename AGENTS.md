@@ -209,9 +209,12 @@ CDN и `preconnect` в `index.html` больше нет.
 - **Палитра единая — «Leica Racing»** (зафиксирована 2026-08-11):
   `bg #050505`, `surface #111113`, `accent #D90429`, `accentMuted #8D081E`,
   `textMain #F5F5F7`. Форка у Hero больше нет, шов на стыке с Marquee закрыт.
-  ⚠️ **Три места, править разом:** [data/palette.ts](src/data/palette.ts)
-  (источник правды и разбор), `theme.extend.colors` в `tailwind.config.js`,
-  `:root` в `src/index.css`. Расхождение — исторически известная ловушка репо.
+  ⚠️ **ШЕСТЬ мест, править разом** — разбор в [data/palette.ts](src/data/palette.ts):
+  сам `palette.ts`, `theme.extend.colors` в `tailwind.config.js`, `:root`
+  в `src/index.css`, `theme-color` в `index.html`, константы
+  в `scripts/generate-og.mjs`, и `public/favicon.svg`. Последние три при смене
+  палитры 2026-08-11 нашлись только грепом по хексам — проверять
+  `grep -rniE "<старый хекс>" .` по всему репозиторию, а не по `src/`.
 - ⚠️ **Контраст акцента на фоне — 3.88:1**, то есть ниже AA (4.5) для обычного
   текста и годен только для крупного текста и UI-элементов. Замерено по WCAG;
   до смены палитры было 5.90. Практические следствия: подпись CTA набрана
