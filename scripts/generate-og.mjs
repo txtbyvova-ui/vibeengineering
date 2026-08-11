@@ -49,11 +49,12 @@ const CACHE = path.join(ROOT, ".cache", "og-fonts");
 const WIDTH = 1200;
 const HEIGHT = 630;
 
-// Токены продублированы из tailwind.config.js: satori не читает Tailwind.
-// При смене палитры править оба места (известная ловушка, см. docs/ARCHITECTURE.md).
-const BG = "#0D0D0D";
-const ACCENT = "#FF4F00";
-const TEXT = "#F4F4F0";
+// Палитра «Leica Racing», продублирована из src/data/palette.ts: satori
+// не читает ни Tailwind, ни TS-модули. Это ЧЕТВЁРТОЕ место с цветами —
+// при смене палитры править вместе с palette.ts, tailwind.config.js и :root.
+const BG = "#050505";
+const ACCENT = "#D90429";
+const TEXT = "#F5F5F7";
 const MUTED = "#888888";
 const HAIRLINE = "rgba(255,255,255,0.10)";
 
