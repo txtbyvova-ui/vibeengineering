@@ -10,7 +10,7 @@ const PHOTO_SIZES = "(min-width: 768px) 128px, 96px";
 
 export default function Team() {
   return (
-    <section id="team" className="px-5 py-24 md:px-10 md:py-40">
+    <section id="team" className="px-5 py-16 md:px-10 md:py-24">
       <div className="mb-12 flex items-end justify-between border-b border-hairline pb-6">
         <h2 className="font-display text-4xl font-semibold tracking-tightest md:text-6xl">
           <RevealText>{teamHeading.title}</RevealText>

@@ -3,11 +3,15 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Палитра «Leica Racing». Источник правды и разбор, почему значения
+      // дублируются в трёх местах, — src/data/palette.ts. Менять все три разом:
+      // этот файл, src/data/palette.ts и :root в src/index.css.
       colors: {
-        bg: "#0D0D0D",
-        surface: "#1A1A1A",
-        accent: "#FF4F00",
-        textMain: "#F4F4F0",
+        bg: "#050505",
+        surface: "#111113",
+        accent: "#D90429",
+        accentMuted: "#8D081E",
+        textMain: "#F5F5F7",
         textMuted: "#888888",
       },
       borderColor: {

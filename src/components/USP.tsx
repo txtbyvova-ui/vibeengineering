@@ -8,7 +8,7 @@ export default function USP() {
   const [first, separator, second] = uspHeading.title;
 
   return (
-    <section className="px-5 py-24 md:px-10 md:py-40">
+    <section className="px-5 py-16 md:px-10 md:py-24">
       <p className="mono-label mb-8">{uspHeading.eyebrow}</p>
 
       <h2 className="font-display text-[15vw] font-semibold leading-[0.9] tracking-display md:text-[10vw]">

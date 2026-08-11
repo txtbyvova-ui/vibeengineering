@@ -37,7 +37,7 @@ export default function Hero() {
       //   (position: fixed, z-index: -1) в пределах Hero, чтобы две сетки
       //   не накладывались друг на друга.
       // isolate — гарантирует, что канва не улетит в корневой стекинг-контекст.
-      className="relative isolate flex min-h-svh flex-col justify-between bg-bg px-5 pb-10 pt-32 md:px-10 md:pt-40"
+      className="relative isolate flex min-h-[70svh] flex-col justify-between bg-bg px-5 pb-12 pt-24 md:px-10 md:pt-28 lg:min-h-svh"
     >
       <HeroScene hostRef={heroRef} headlineRef={headlineRef} className="z-0" />
 

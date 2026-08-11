@@ -53,7 +53,7 @@ export default function Cases() {
   }, []);
 
   return (
-    <section id="work" className="px-5 py-24 md:px-10 md:py-40">
+    <section id="work" className="px-5 py-16 md:px-10 md:py-24">
       <CasesJsonLd />
 
       <div className="mb-8 flex items-end justify-between border-b border-hairline pb-6">
