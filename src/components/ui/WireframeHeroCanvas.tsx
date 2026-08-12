@@ -54,16 +54,19 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
   const invalidate = useThree((s) => s.invalidate);
   const viewport = useThree((s) => s.viewport);
 
-  // Размер и сдвиг считаются от ВИДИМОЙ ширины кадра в мировых единицах:
+  // Размер и сдвиг считаются от ВИДИМЫХ размеров кадра в мировых единицах:
   // в пикселях это разъехалось бы на другом соотношении сторон, а на узком
-  // экране фигура вылезла бы за кадр.
-  const [scale, offsetX] = useMemo(() => {
+  // экране фигура вылезла бы за кадр. По вертикали — от высоты, не от ширины:
+  // панель, из-под которой мы уводим фигуру, стоит в пикселях от верха.
+  const [scale, offsetX, offsetY] = useMemo(() => {
     const [lo, hi] = WIRE.scaleClamp;
     const s = Math.min(hi, Math.max(lo, viewport.width * WIRE.scaleRatio));
-    // На мобиле сдвигать некуда — там фигура лежит за текстом по центру.
+    // На мобиле сдвигать некуда — там фигура лежит за текстом по центру,
+    // и панели, от которой надо уворачиваться, тоже нет.
     const x = mode === "quiet" ? 0 : viewport.width * WIRE.offsetXRatio;
-    return [s, x];
-  }, [viewport.width, mode]);
+    const y = mode === "quiet" ? 0 : viewport.height * WIRE.offsetYRatio;
+    return [s, x, y];
+  }, [viewport.width, viewport.height, mode]);
 
   // Объект uniform'ов создаётся один раз; дальше мутируем `.value`, иначе
   // ShaderMaterial перекомпилируется на каждое движение ползунка.
@@ -122,7 +125,7 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
     <mesh
       ref={meshRef}
       geometry={geometry}
-      position={[offsetX, 0, 0]}
+      position={[offsetX, offsetY, 0]}
       scale={scale}
       frustumCulled={false}
     >
@@ -168,12 +171,38 @@ const LEVA_THEME = {
 };
 
 /**
- * Маска канвы гасит ПРАВЫЙ край — там висит панель параметров, и проволока
- * не должна лезть под ползунки. Раньше гасился левый, потому что фигура стояла
- * справа; знак сдвига (`WIRE.offsetXRatio`) и сторона маски связаны жёстко.
+ * Маска канвы гасит ЛЕВЫЙ край — там стоит оффер, и он обязан выигрывать у фона.
+ * Сторона маски и знак `WIRE.offsetXRatio` связаны жёстко: гаснет тот край,
+ * где фигуры нет. За смену стороны 2026-08-12 перевёрнуты оба.
+ *
+ * ⚠️ **Стопы заданы в `rem`, а не в процентах, и это принципиально.** Текст
+ * Hero ограничен колонкой `max-w-[52rem]` плюс `px-10`, то есть его правый край
+ * не может уйти дальше 54.5 rem ни на какой ширине окна — строка не бывает шире
+ * колонки. Порог 55 rem привязан ровно к этой границе и потому держит текст
+ * в тени везде.
+ *
+ * Процентные пороги здесь пробовались и не годятся: на 1024 px колонка занимает
+ * 81 % экрана, и процент, достаточный для 1920, пускал проволоку под заголовок.
+ * Замерено 2026-08-12: при пороге 68 % правый край h1 на 1024 приходился
+ * на альфу маски 0.50 — проволока читалась сквозь текст.
+ *
+ * Цена абсолютных порогов — узкий десктоп: на 1024 фигуре остаётся 144 px
+ * справа, и полной яркости она там не набирает. Это осознанный размен в пользу
+ * читаемости оффера; на 1280 и выше фигура открыта нормально.
+ *
+ * Проверять после любой правки колонки Hero: замер — правый край самой длинной
+ * строки против первого непрозрачного стопа.
  */
 const SCENE_MASK =
-  "linear-gradient(to left, transparent 0%, rgba(0,0,0,0.12) 16%, rgba(0,0,0,0.6) 30%, #000 44%)";
+  "linear-gradient(to right, transparent 0, transparent 55rem, rgba(0,0,0,0.35) 60rem, #000 67rem)";
+
+/**
+ * То же для мобилы: там текстовой колонки нет, текст идёт во всю ширину,
+ * и абсолютные стопы погасили бы канву целиком — 52 rem шире любого телефона.
+ * Поэтому здесь проценты, а фигура и так приглушена до 0.42.
+ */
+const SCENE_MASK_QUIET =
+  "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.45) 34%, #000 64%)";
 
 const GEOMETRY_OPTIONS: Record<string, WireGeometryKind> = {
   TorusKnot: "torusKnot",
@@ -212,19 +241,21 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
     enabled: mode !== "frozen",
   });
 
+  const mask = mode === "quiet" ? SCENE_MASK_QUIET : SCENE_MASK;
+
   return (
     <>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
-        // Левый край гасим: там оффер, и он обязан выигрывать у фона.
-        // На мобиле фигура лежит за всем текстом, поэтому там гасим целиком слабее.
         style={{
-          maskImage: SCENE_MASK,
-          WebkitMaskImage: SCENE_MASK,
-          // Фигура стоит слева-в-центре, то есть прямо под заголовком.
-          // Приглушение — то, чем оффер выигрывает у фона: без него
-          // проволока спорит с h1 за внимание.
+          // Гасим ЛЕВЫЙ край — там оффер. На мобиле текстовой колонки нет,
+          // поэтому маска своя, процентная: разбор у обеих констант выше.
+          maskImage: mask,
+          WebkitMaskImage: mask,
+          // Фигура стоит справа-в-центре и на текст больше не заходит, но
+          // приглушение оставлено: фон первого экрана не должен тянуть взгляд
+          // с оффера, даже стоя от него в стороне.
           opacity: mode === "quiet" ? 0.42 : 0.58,
         }}
       >
@@ -239,7 +270,12 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
       </div>
 
       {showPanel ? (
-        <div className="pointer-events-auto absolute right-5 top-28 z-20 w-[228px] md:right-10 md:top-32">
+        // Панель — непрозрачная плашка, а не «стекло». Фигура с 2026-08-12
+        // стоит справа и проходит ровно под этим углом: без подложки проволока
+        // лезла бы под ползунки — тот самый дефект, с которого начиналась
+        // задача 11.08. Плашка решает его независимо от того, куда фигуру
+        // сдвинут в следующий раз, а маску под панель вырезать не пришлось.
+        <div className="pointer-events-auto absolute right-5 top-28 z-20 w-[236px] border border-hairline bg-bg/95 p-2.5 md:right-10 md:top-32">
           <div className="mb-1.5 flex items-baseline justify-between border-b border-accent/25 pb-1.5">
             <span lang="en" className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
               {heroWireframe.panelTitle}

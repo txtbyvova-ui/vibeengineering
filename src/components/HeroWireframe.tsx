@@ -20,6 +20,14 @@ const Q_REDUCE = "(prefers-reduced-motion: reduce)";
  * | ширина < 768 px | `quiet` | медленное вращение, без пунктирной анимации и без панели |
  * | остальное | `full` | панель параметров, бегущий пунктир, вращение |
  *
+ * ⚠️ **Отдельно от режима решается, показывать ли сцену вообще.** С 2026-08-12
+ * фигура стоит СПРАВА от оффера, а маска канвы гасит её левее текстовой колонки.
+ * В полосе 768–1023 px колонка (`max-w-[52rem]`) занимает всю ширину контента,
+ * и справа не остаётся ничего: фигура либо лезет под заголовок, либо не видна.
+ * Выбрано второе — сцена там не монтируется вовсе, и планшет заодно не качает
+ * ленивый чанк на 294 kB. Пороги те же, что у панели: обоим нужно одно и то же —
+ * свободное место справа от текста.
+ *
  * ⚠️ В отличие от воронки, `three` здесь грузится и на мобиле: постановка требует
  * оставить фигуру вращающейся декорацией, а векторного фолбэка у wireframe нет.
  * Цена этого решения замерена и записана в отчёт — если мобильный вес важнее
@@ -32,6 +40,7 @@ const Q_REDUCE = "(prefers-reduced-motion: reduce)";
 export default function HeroWireframe() {
   const heroRef = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<WireMode | null>(null);
+  const [showScene, setShowScene] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -43,8 +52,13 @@ export default function HeroWireframe() {
     let timer = 0;
 
     const decide = () => {
-      setMode(mqReduce.matches ? "frozen" : mqNarrow.matches ? "quiet" : "full");
-      setShowPanel(!mqReduce.matches && mqPanel.matches);
+      const narrow = mqNarrow.matches;
+      const wide = mqPanel.matches;
+      setMode(mqReduce.matches ? "frozen" : narrow ? "quiet" : "full");
+      // Место справа от оффера есть только на мобиле (там фигура лежит фоном
+      // за текстом) и от 1024 px. Между ними — не показываем, разбор в шапке.
+      setShowScene(narrow || wide);
+      setShowPanel(!mqReduce.matches && wide);
     };
     decide();
     mqReduce.addEventListener("change", decide, { signal: abort.signal });
@@ -80,7 +94,7 @@ export default function HeroWireframe() {
 //   min-h-svh дыра составляла замеренные 464 px.
       className="relative isolate flex min-h-[70svh] flex-col justify-between bg-bg px-5 pb-12 pt-24 md:px-10 md:pt-28 lg:min-h-svh"
     >
-      {mounted && mode ? (
+      {mounted && mode && showScene ? (
         <Suspense fallback={null}>
           <WireframeHeroCanvas hostRef={heroRef} mode={mode} showPanel={showPanel} />
         </Suspense>
@@ -108,7 +122,12 @@ export default function HeroWireframe() {
         ))}
       </motion.div>
 
-      {/* Оффер */}
+      {/* Оффер. ⚠️ `max-w-[52rem]` — не декоративное ограничение: строка текста
+          физически не может стать шире колонки, поэтому правый край текста
+          гарантированно ≤ 52rem + px-10 = 54.5rem. На этом стоит маска канвы
+          (SCENE_MASK в WireframeHeroCanvas), которая гасит проволоку левее
+          55rem. Расширите колонку — текст выедет из-под маски и ляжет
+          на фигуру; менять только вместе с порогами маски. */}
       <div className="relative z-10 mt-auto max-w-[52rem]">
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
