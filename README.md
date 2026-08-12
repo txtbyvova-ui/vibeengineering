@@ -111,11 +111,20 @@ strings — **no glslify, no Babel** in the pipeline.
 
 `HeroWireframe` picks the mode; the scene mounts after `load`:
 
-| visitor | mode | panel | dash animation | rotation |
-|---|---|---|---|---|
-| desktop ≥ 768 px | `full` | yes | yes | yes |
-| width < 768 px | `quiet` | no | no | slow |
-| `prefers-reduced-motion` | `frozen` | no | no | **no**, single frame |
+| visitor | mode | scene | panel | dash animation | rotation |
+|---|---|---|---|---|---|
+| desktop ≥ 1024 px | `full` | yes | yes | yes | yes |
+| 768–1023 px | `full` | **no** | no | — | — |
+| width < 768 px | `quiet` | yes | no | no | slow |
+| `prefers-reduced-motion` | `frozen` | yes | no | no | **no**, single frame |
+
+The offer sits on the left, the figure on the right. That layout rests on three
+coupled values — `WIRE.offsetXRatio` (sign), the side `SCENE_MASK` fades out, and
+the `max-w-[52rem]` text column the mask's `rem` stops are anchored to. Change one
+without the others and the copy lands on top of the wireframe; neither the type
+checker nor the browser will say a word. Between 768 and 1023 px the column takes
+the full content width, so the scene is not mounted there at all — which also
+keeps the 294 kB lazy chunk off tablets.
 
 Measurements, the three ported-shader deviations and six open questions for the
 owner: [docs/REPORT-hero-wireframe.md](docs/REPORT-hero-wireframe.md).
