@@ -39,6 +39,8 @@ export const legal = {
   company: "ООО «ВАЙБ ИНЖИНИРИНГ»",
   requisites: "",
   city: "Москва, Россия",
-  copyright: "©2026 Vibe Engineering",
+  // Год — текущий, а не «2025» из копирайта: откат года назад читается
+  // как заброшенный сайт. Решение владельца от 2026-08-12.
+  copyright: "© 2026 Vibe Engineering",
   email: "hq@vibeengineering.ru",
 };

@@ -69,13 +69,17 @@ const CaseCard = forwardRef<HTMLButtonElement, CaseCardProps>(function CaseCard(
           {study.client}
         </p>
 
-        {/* Ровно одна строка: карточка — тизер, полный заголовок в модалке.
+        {/* Максимум ДВЕ строки, а не одна: копирайт 2026-08-11 принёс заголовки
+            до 37 знаков («Выиграли тендер федерального масштаба»), и в одну
+            строку они резались молча — ни в вёрстке, ни в scrollWidth обрезку
+            line-clamp не видно. Карточки при этом остаются одной высоты:
+            лента разложена `items-stretch`, короткий заголовок просто не
+            занимает вторую строку.
             17 px до sm — не вкусовщина: ниже sm карточка занимает 85vw, и на
-            320 px в бокс остаётся 222 px, а обрезка line-clamp молчаливая —
-            ни в вёрстке, ни в scrollWidth её не видно. При 18 px самый длинный
-            из утверждённых заголовков вылезал на 1 px (M PLUS Rounded 1c шире
-            прежнего системного фоллбэка). Лимит длины title — в types/index.ts. */}
-        <h3 className="mt-3 line-clamp-1 font-display text-[17px] font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent sm:text-xl md:text-2xl">
+            320 px в бокс остаётся 222 px. При 18 px самый длинный из прежних
+            заголовков вылезал на 1 px (M PLUS Rounded 1c шире прежнего
+            системного фоллбэка). Лимит длины title — в types/index.ts. */}
+        <h3 className="mt-3 line-clamp-2 font-display text-[17px] font-medium leading-[1.3] tracking-tightest transition-colors duration-500 ease-premium group-hover:text-accent sm:text-xl md:text-2xl">
           {study.title}
         </h3>
 

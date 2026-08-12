@@ -303,18 +303,31 @@ export default function CaseModal({
                   ))}
                 </div>
 
-                <dl className="mt-8 space-y-6">
-                  {caseBlockLabels.map((label, i) => (
-                    <div key={label}>
-                      <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
-                        {label}
-                      </dt>
-                      <dd className="mt-2 max-w-2xl text-textMuted">
-                        {[study.problem, study.solution, study.result][i]}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
+                {/* Два формата рассказа, см. CaseNarrative в types: тройка
+                    с подписями блоков либо один абзац. Что именно пришло —
+                    решает не разметка, а копирайт кейса. */}
+                {study.summary ? (
+                  <p className="mt-8 max-w-2xl text-textMuted">{study.summary}</p>
+                ) : (
+                  <dl className="mt-8 space-y-6">
+                    {caseBlockLabels.map((label, i) => (
+                      <div key={label}>
+                        <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+                          {label}
+                        </dt>
+                        <dd className="mt-2 max-w-2xl text-textMuted">
+                          {[study.problem, study.solution, study.result][i]}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+
+                {study.clientsNote && (
+                  <p className="mt-6 font-mono text-[11px] uppercase leading-relaxed tracking-[0.14em] text-textMuted">
+                    {study.clientsNote}
+                  </p>
+                )}
 
                 <div className="mt-8 flex flex-wrap gap-2 border-t border-hairline pt-6">
                   {study.stack.map((item) => (

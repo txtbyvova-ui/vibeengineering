@@ -25,6 +25,12 @@ export default function CasesJsonLd() {
       // В машинно-читаемых данных «уточняется» превратилось бы в настоящий
       // keyword у трёх кейсов из четырёх.
       const stack = study.stack.filter((item) => item !== TBD);
+      // Кейс рассказан либо тройкой, либо одним абзацем (CaseNarrative).
+      // Для второго варианта abstract и description совпадают: другого текста
+      // у кейса нет, а выкидывать одно из полей ради непохожести — хуже,
+      // чем повторить. Пустых строк в разметке не остаётся ни в одном случае.
+      const abstract = study.problem ?? study.summary;
+      const description = study.summary ?? `${study.solution} ${study.result}`;
       return {
         "@type": "ListItem",
         position: i + 1,
@@ -33,8 +39,8 @@ export default function CasesJsonLd() {
           "@id": `${ORIGIN}/#case-${study.slug}`,
           name: study.title,
           genre: study.tag,
-          abstract: study.problem,
-          description: `${study.solution} ${study.result}`,
+          abstract,
+          description,
           ...(stack.length > 0 && { keywords: stack.join(", ") }),
           ...(study.year !== null && { datePublished: String(study.year) }),
           creator: { "@id": `${ORIGIN}/#organization` },

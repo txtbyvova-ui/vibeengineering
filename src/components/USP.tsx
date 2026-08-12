@@ -11,7 +11,12 @@ export default function USP() {
     <section className="px-5 py-16 md:px-10 md:py-24">
       <p className="mono-label mb-8">{uspHeading.eyebrow}</p>
 
-      <h2 className="font-display text-[15vw] font-semibold leading-[0.9] tracking-display md:text-[10vw]">
+      {/* Кегль привязан к длине заголовка, а не к вкусу: копирайт 2026-08-11
+          заменил «Инженер × Продюсер» (18 знаков) фразой из 40, и на прежних
+          15vw/10vw «Инженерная» одна занимала строку целиком — секция вырастала
+          на три лишние строки заголовка. 11vw/6vw дают две строки на десктопе
+          при той же плотности пятна. Вернёте короткий заголовок — верните кегль. */}
+      <h2 className="font-display text-[11vw] font-semibold leading-[0.9] tracking-display md:text-[6vw]">
         <RevealText>
           <span className="text-hollow">{first}</span>
         </RevealText>{" "}

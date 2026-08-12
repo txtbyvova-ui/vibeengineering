@@ -1,9 +1,10 @@
 import type { Link, ProcessStep, SectionHeading } from "@/types";
 
+/** Раскладка шапки — как в Services: имя раздела в заголовке, фраза в ◆-строке. */
 export const processHeading: SectionHeading = {
-  eyebrow: "◆ Процесс",
-  title: "Четыре этапа",
-  subtitle: "Вы всегда знаете, что происходит и когда это закончится",
+  eyebrow: "◆ Четыре этапа",
+  title: "Процесс",
+  subtitle: "Вы всегда знаете, что происходит и когда это закончится.",
 };
 
 export const process: ProcessStep[] = [
