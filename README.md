@@ -113,7 +113,7 @@ strings — **no glslify, no Babel** in the pipeline.
 
 | visitor | mode | scene | panel | dash animation | rotation |
 |---|---|---|---|---|---|
-| desktop ≥ 1024 px | `full` | yes | yes | yes | yes |
+| desktop ≥ 1024 px | `full` | yes | yes, **collapsed** | yes | yes |
 | 768–1023 px | `full` | **no** | no | — | — |
 | width < 768 px | `quiet` | yes | no | no | slow |
 | `prefers-reduced-motion` | `frozen` | yes | no | no | **no**, single frame |

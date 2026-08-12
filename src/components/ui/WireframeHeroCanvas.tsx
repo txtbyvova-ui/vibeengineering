@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Leva, useControls } from "leva";
@@ -242,6 +242,9 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
   });
 
   const mask = mode === "quiet" ? SCENE_MASK_QUIET : SCENE_MASK;
+  // Свёрнута по умолчанию: развёрнутая панель стоит поверх фигуры, разбор — ниже.
+  const [panelOpen, setPanelOpen] = useState(false);
+  const panelId = useId();
 
   return (
     <>
@@ -270,21 +273,53 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
       </div>
 
       {showPanel ? (
-        // Панель — непрозрачная плашка, а не «стекло». Фигура с 2026-08-12
-        // стоит справа и проходит ровно под этим углом: без подложки проволока
-        // лезла бы под ползунки — тот самый дефект, с которого начиналась
-        // задача 11.08. Плашка решает его независимо от того, куда фигуру
-        // сдвинут в следующий раз, а маску под панель вырезать не пришлось.
-        <div className="pointer-events-auto absolute right-5 top-28 z-20 w-[236px] border border-hairline bg-bg/95 p-2.5 md:right-10 md:top-32">
-          <div className="mb-1.5 flex items-baseline justify-between border-b border-accent/25 pb-1.5">
-            <span lang="en" className="font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
-              {heroWireframe.panelTitle}
+        /**
+         * Панель СВЁРНУТА по умолчанию, и это не украшательство.
+         *
+         * Развёрнутая она занимает 236×242 и стоит в правом верхнем углу —
+         * ровно там, где проходит фигура. Замер 2026-08-12: закрывала 19 %
+         * её видимой площади на 1280×800. Развести их геометрией нельзя:
+         * фигура вдвое выше панели, а первый экран не резиновый — считали
+         * и сдвиг вниз, и уменьшение, всё упирается в высоту экрана.
+         *
+         * Свёрнутая — полоска 236×32 в самом верху: фигура на всех проверенных
+         * ширинах начинается ниже (запас от 9 px на коротком 1024×600
+         * до 141 px на 1920×1080), поэтому по умолчанию её не заслоняет ничто.
+         * Развернуть — осознанное действие посетителя, и вот тогда плашка
+         * ложится поверх фигуры; подложка `bg-bg/95` там для того, чтобы
+         * проволока не лезла под ползунки (исходный дефект задачи 11.08).
+         */
+        // `top-24`, а не прежние `top-32`: свёрнутая полоска обязана уместиться
+        // НАД фигурой, а её верх зависит от высоты окна. Замер по сетке — на
+        // коротком 1024×600 запас был 1 px, после подъёма стал 33; на 1280×720
+        // 33 → 65. Ниже шапки при этом остаётся 24 px даже в непрокрученном
+        // состоянии (`py-6` у nav).
+        <div className="pointer-events-auto absolute right-5 top-20 z-20 w-[236px] md:right-10 md:top-24">
+          <button
+            type="button"
+            onClick={() => setPanelOpen((open) => !open)}
+            aria-expanded={panelOpen}
+            aria-controls={panelId}
+            className="flex w-full items-center justify-between gap-3 border border-hairline bg-bg/95 px-2.5 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-accent transition-colors duration-300 hover:border-accent/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <span lang="en">{heroWireframe.panelTitle}</span>
+            <span aria-hidden className="text-textMuted">
+              {panelOpen ? "–" : "+"}
             </span>
-          </div>
-          <Leva fill titleBar={false} theme={LEVA_THEME} />
-          <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-textMuted">
-            {heroWireframe.panelNote}
-          </p>
+          </button>
+
+          {panelOpen ? (
+            <div id={panelId} className="mt-1.5 border border-hairline bg-bg/95 p-2.5">
+              <Leva fill titleBar={false} theme={LEVA_THEME} />
+              <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-textMuted">
+                {heroWireframe.panelNote}
+              </p>
+            </div>
+          ) : (
+            // Пока свёрнута, leva всё равно должна получить явный рендер,
+            // иначе она смонтирует собственную панель в body — см. ветку ниже.
+            <Leva hidden />
+          )}
         </div>
       ) : (
         // Панель у leva самомонтируется в body, если её не отрендерить явно —
