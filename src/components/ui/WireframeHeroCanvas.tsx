@@ -29,6 +29,17 @@ export type WireMode = "full" | "quiet" | "frozen";
 const CAMERA_Z = 2.75;
 const CAMERA_FOV = 45;
 
+/**
+ * Корневой кегль в пикселях. Все рубежи первого экрана заданы в `rem`
+ * (колонка текста, стопы маски), а меш живёт в пикселях кадра — здесь курс
+ * обмена. Читается один раз: у страницы нет ни одного места, где он менялся бы
+ * в рантайме, а вот у посетителя он может быть не 16, и тогда вместе с колонкой
+ * обязан поехать и рубеж посадки фигуры.
+ */
+function useRootFontPx(): number {
+  return useMemo(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16, []);
+}
+
 interface Props {
   hostRef: RefObject<HTMLElement | null>;
   /**
@@ -82,13 +93,15 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
    * «не перекрывает панель» становится арифметической, а не подобранной.
    */
   const size = useThree((s) => s.size);
+  const rootFontPx = useRootFontPx();
 
   const [scale, offsetX, offsetY] = useMemo(() => {
     const [lo, hi] = WIRE.scaleClamp;
-    const byWidth = Math.min(hi, Math.max(lo, viewport.width * WIRE.scaleRatio));
 
     // На мобиле разводить не с чем: панели нет, фигура лежит за текстом по центру.
-    if (mode === "quiet") return [byWidth, 0, 0];
+    if (mode === "quiet") {
+      return [Math.min(hi, Math.max(lo, viewport.width * WIRE.scaleRatio)), 0, 0];
+    }
 
     const worldPerPx = viewport.height / size.height;
     const freePx = size.height - WIRE.panelReservedPx - WIRE.figureGapPx * 2;
@@ -102,18 +115,71 @@ function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
      * Силуэт сферы радиуса R с расстояния d виден под углом asin(R/d), отсюда
      * обратный ход: из доли кадра → тангенс → синус → радиус.
      */
-    const ndcHalf = freePx / size.height;
-    const angular = Math.atan(ndcHalf * Math.tan((CAMERA_FOV / 2) * (Math.PI / 180)));
-    const byHeight = (CAMERA_Z * Math.sin(angular)) / radius;
+    const tanHalfFov = Math.tan((CAMERA_FOV / 2) * (Math.PI / 180));
+    /** Мировой радиус, вписанный в полосу высотой `freePx`. Фигура там по центру,
+     *  то есть по вертикали она на оси кадра и перекос перспективы ей не грозит. */
+    const byHeight = CAMERA_Z * Math.sin(Math.atan((freePx / size.height) * tanHalfFov));
 
-    const centerPx = WIRE.panelReservedPx + WIRE.figureGapPx + freePx / 2;
+    /**
+     * ⚠️ **Горизонталь считается ТАК ЖЕ, как вертикаль: от пикселей, а не долей.**
+     *
+     * Свободная пустота справа зажата между двумя пиксельными величинами:
+     * правой границей текста (`textSafeRem` — тот самый рубеж, где маска
+     * гасит канву в ноль) и краем экрана. Фигура садится ровно в середину
+     * этой полосы и в неё же вписывается по размеру, то есть не липнет
+     * ни к тексту, ни к правому краю по построению.
+     *
+     * Прежний `offsetXRatio` был долей ширины и этого не знал: на 1280 левый
+     * край фигуры уходил на 796 px при рубеже 880 — 84 px фигуры лежали
+     * в нулевой альфе и просто не рисовались, а остальное тонуло в рампе.
+     * Выглядело это как «сфера прижата к правому краю», хотя центр стоял на 75 %:
+     * видна была только правая, яркая её часть.
+     */
+    const safePx = WIRE.textSafeRem * rootFontPx;
+    const bandLeft = safePx + WIRE.sideGapPx;
+    const bandRight = size.width - WIRE.sideGapPx;
+    const halfWidthWorld = tanHalfFov * (size.width / size.height) * CAMERA_Z;
+    const toNdc = (px: number) => (px - size.width / 2) / (size.width / 2);
+    const targetCenter = toNdc((bandLeft + bandRight) / 2);
+    const targetHalf = ((bandRight - bandLeft) / 2) / (size.width / 2);
+
+    /**
+     * ⚠️ **Силуэт off-axis сферы НЕ центрирован на проекции её центра.**
+     *
+     * Камера перспективная: ближний к ней край фигуры проецируется крупнее,
+     * и силуэт уезжает наружу от оси кадра. Первый заход этой правки считал
+     * положение по проекции центра — фигуру вынесло на 17 px вправо, до правого
+     * края осталось 9 px. Поэтому берём честные касательные: с расстояния
+     * `dist` шар радиуса `R` виден под углом `asin(R/dist)`, а сам центр стоит
+     * под углом `atan(cx/z)`. Границы силуэта — тангенсы суммы и разности.
+     */
+    const silhouette = (r: number, cx: number) => {
+      const dist = Math.hypot(cx, CAMERA_Z);
+      const a = Math.atan2(cx, CAMERA_Z);
+      const b = Math.asin(Math.min(0.999, r / dist));
+      const k = tanHalfFov * (size.width / size.height);
+      return [Math.tan(a - b) / k, Math.tan(a + b) / k] as const;
+    };
+
+    // Простая неподвижная точка: ужать под полосу → доцентровать → повторить.
+    // Отображение монотонное и гладкое, четырёх шагов хватает с запасом.
+    let r = Math.min(hi * radius, byHeight, targetHalf * halfWidthWorld);
+    let cx = targetCenter * halfWidthWorld;
+    for (let i = 0; i < 4; i++) {
+      const [l0, r0] = silhouette(r, cx);
+      r = Math.min(r * Math.min(1, targetHalf / ((r0 - l0) / 2)), byHeight, hi * radius);
+      const [l1, r1] = silhouette(r, cx);
+      cx += (targetCenter - (l1 + r1) / 2) * halfWidthWorld;
+    }
+
+    const centerYPx = WIRE.panelReservedPx + WIRE.figureGapPx + freePx / 2;
     return [
-      Math.min(byWidth, byHeight),
-      viewport.width * WIRE.offsetXRatio,
+      r / radius,
+      cx,
       // Мировая ось Y смотрит вверх, экранная — вниз, отсюда знак.
-      (size.height / 2 - centerPx) * worldPerPx,
+      (size.height / 2 - centerYPx) * worldPerPx,
     ];
-  }, [viewport.width, viewport.height, size.height, mode, geometryKind]);
+  }, [viewport.height, size.width, size.height, mode, geometryKind, rootFontPx]);
 
   // Объект uniform'ов создаётся один раз; дальше мутируем `.value`, иначе
   // ShaderMaterial перекомпилируется на каждое движение ползунка.
@@ -222,29 +288,32 @@ const LEVA_THEME = {
 
 /**
  * Маска канвы гасит ЛЕВЫЙ край — там стоит оффер, и он обязан выигрывать у фона.
- * Сторона маски и знак `WIRE.offsetXRatio` связаны жёстко: гаснет тот край,
- * где фигуры нет. За смену стороны 2026-08-12 перевёрнуты оба.
  *
- * ⚠️ **Стопы заданы в `rem`, а не в процентах, и это принципиально.** Текст
- * Hero ограничен колонкой `max-w-[52rem]` плюс `px-10`, то есть его правый край
- * не может уйти дальше 54.5 rem ни на какой ширине окна — строка не бывает шире
- * колонки. Порог 55 rem привязан ровно к этой границе и потому держит текст
- * в тени везде.
+ * ⚠️ **Стопы заданы в `rem` и собираются из `WIRE.textSafeRem`, а не пишутся
+ * числами.** Текст Hero ограничен колонкой `max-w-[52rem]` плюс `px-10`, то есть
+ * его правый край не уходит дальше 54.5 rem ни на какой ширине окна — строка
+ * не бывает шире колонки. Тот же рубеж читает математика посадки фигуры, так что
+ * маска и меш физически не могут разъехаться.
  *
  * Процентные пороги здесь пробовались и не годятся: на 1024 px колонка занимает
  * 81 % экрана, и процент, достаточный для 1920, пускал проволоку под заголовок.
  * Замерено 2026-08-12: при пороге 68 % правый край h1 на 1024 приходился
  * на альфу маски 0.50 — проволока читалась сквозь текст.
  *
- * Цена абсолютных порогов — узкий десктоп: на 1024 фигуре остаётся 144 px
- * справа, и полной яркости она там не набирает. Это осознанный размен в пользу
- * читаемости оффера; на 1280 и выше фигура открыта нормально.
+ * ⚠️ **Рампа короткая — ровно `sideGapPx`.** Раньше она тянулась от 55 до 67 rem,
+ * и фигура на 1280 почти целиком лежала внутри неё: яркой была только правая
+ * кромка, отчего сфера и читалась «прижатой к правому краю», хотя её центр стоял
+ * на 75 % ширины. Теперь фигура садится ровно там, где рампа кончается: гаснуть
+ * у неё нечему, а текст по-прежнему в зоне нулевой альфы и недосягаем.
+ * Резкость края никого не смущает — гасить левее фигуры попросту нечего,
+ * канва там прозрачная.
  *
  * Проверять после любой правки колонки Hero: замер — правый край самой длинной
  * строки против первого непрозрачного стопа.
  */
-const SCENE_MASK =
-  "linear-gradient(to right, transparent 0, transparent 55rem, rgba(0,0,0,0.35) 60rem, #000 67rem)";
+const SCENE_MASK = `linear-gradient(to right, transparent 0, transparent ${WIRE.textSafeRem}rem, #000 ${
+  WIRE.textSafeRem + WIRE.sideGapPx / 16
+}rem)`;
 
 /**
  * То же для мобилы: там текстовой колонки нет, текст идёт во всю ширину,
