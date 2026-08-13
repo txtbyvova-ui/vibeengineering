@@ -9,26 +9,39 @@ export default function USP() {
 
   return (
     <section className="px-5 py-16 md:px-10 md:py-24">
-      <p className="mono-label mb-8">{uspHeading.eyebrow}</p>
+      <p className="mono-label mb-5">{uspHeading.eyebrow}</p>
 
-      {/* Кегль привязан к длине заголовка, а не к вкусу: копирайт 2026-08-11
-          заменил «Инженер × Продюсер» (18 знаков) фразой из 40, и на прежних
-          15vw/10vw «Инженерная» одна занимала строку целиком — секция вырастала
-          на три лишние строки заголовка. 11vw/6vw дают две строки на десктопе
-          при той же плотности пятна. Вернёте короткий заголовок — верните кегль. */}
-      <h2 className="font-display text-[11vw] font-semibold leading-[0.9] tracking-display md:text-[6vw]">
-        <RevealText>
-          <span className="text-hollow">{first}</span>
-        </RevealText>{" "}
+      {/**
+       * ⚠️ **Заголовок набран заливкой, а не контуром, и это лечение дефекта.**
+       *
+       * До 2026-08-13 крайние куски шли классом `text-hollow` — прозрачная
+       * заливка плюс обводка `1px` акцентом. На кегле 77 px это 1.3 % от роста
+       * буквы: акцент и сплошным-то даёт 3.88:1 к фону, а волосяным контуром
+       * не читается вовсе. Секция выглядела пустой прямоугольник, в котором
+       * висят только надстрочник и союз «и» — единственный кусок, набранный
+       * заливкой. Владелец так и описал: «пустой блок и оторванная буква и».
+       *
+       * Контур в проекте остаётся жив там, где он работает: цифры этапов
+       * в Process (крупные цифры, заливаются на hover) и `text-hollow-white`
+       * в ленте клиентов. Сюда его не возвращать.
+       *
+       * Кегль тоже уменьшен — 11vw/6vw держали 40-знаковую фразу в две строки
+       * по 138 px. Фиксированные ступени вместо `vw` заодно убирают зависимость
+       * числа строк от ширины окна.
+       */}
+      <h2 className="max-w-4xl font-display text-3xl font-semibold leading-[1.08] tracking-tightest md:text-5xl">
+        <RevealText>{first}</RevealText>{" "}
         <span className="text-accent">{separator}</span>{" "}
-        <RevealText delay={0.1}>
-          <span className="text-hollow">{second}</span>
-        </RevealText>
+        <RevealText delay={0.08}>{second}</RevealText>
       </h2>
 
-      <p className="mt-6 max-w-xl text-textMuted md:text-lg">{uspHeading.subtitle}</p>
+      {/* Подзаголовок, а не сноска: `textMain` и на ступень крупнее тела.
+          Прежние `textMuted` 18 px терялись между заголовком и карточками. */}
+      <p className="mt-5 max-w-2xl text-lg leading-relaxed text-textMain md:text-xl">
+        {uspHeading.subtitle}
+      </p>
 
-      <div className="mt-16 grid grid-cols-1 border-t border-hairline md:grid-cols-3">
+      <div className="mt-10 grid grid-cols-1 border-t border-hairline md:mt-12 md:grid-cols-3">
         {uspPoints.map((point, i) => (
           <motion.div
             key={point.label}

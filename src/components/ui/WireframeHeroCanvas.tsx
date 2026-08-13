@@ -21,6 +21,14 @@ import { WIREFRAME_FRAG, WIREFRAME_VERT } from "@/shaders/wireframe";
 /** Режим сцены. Решение принимает HeroWireframe, сцена только исполняет. */
 export type WireMode = "full" | "quiet" | "frozen";
 
+/**
+ * Камера. Вынесена в константы, потому что теперь по ним считается не только
+ * рендер, но и вписывание фигуры в свободную полосу первого экрана —
+ * два места должны видеть одни и те же числа. Задаются ниже в `<Canvas camera>`.
+ */
+const CAMERA_Z = 2.75;
+const CAMERA_FOV = 45;
+
 interface Props {
   hostRef: RefObject<HTMLElement | null>;
   /**
@@ -50,23 +58,62 @@ interface WireParams {
 function WireMesh({ params, mode }: { params: WireParams; mode: WireMode }) {
   const meshRef = useRef<Mesh>(null);
   const matRef = useRef<ShaderMaterial>(null);
-  const geometry = useWireframeGeometry(params.geometry);
+  const geometryKind = params.geometry;
+  const geometry = useWireframeGeometry(geometryKind);
   const invalidate = useThree((s) => s.invalidate);
   const viewport = useThree((s) => s.viewport);
 
-  // Размер и сдвиг считаются от ВИДИМЫХ размеров кадра в мировых единицах:
-  // в пикселях это разъехалось бы на другом соотношении сторон, а на узком
-  // экране фигура вылезла бы за кадр. По вертикали — от высоты, не от ширины:
-  // панель, из-под которой мы уводим фигуру, стоит в пикселях от верха.
+  /**
+   * Размер и положение фигуры.
+   *
+   * По горизонтали — доля от видимой ШИРИНЫ кадра в мировых единицах:
+   * в пикселях это разъехалось бы на другом соотношении сторон.
+   *
+   * По вертикали — иначе, и в этом вся суть правки 2026-08-13. Панель
+   * параметров занимает фиксированную полосу в ПИКСЕЛЯХ от верха
+   * (`WIRE.panelReservedPx`), а фигура живёт в мировых единицах. Любой
+   * фиксированный `offsetYRatio` поэтому промахивался: доля от высоты даёт
+   * на коротком экране меньше пикселей, чем на высоком, а панель короче
+   * не становится. Замерено на прежнем `-0.09`: на 1280×720 фигура заезжала
+   * под панель на 20 px, на 1024×600 — на 38.
+   *
+   * Теперь считаем честно: переводим пиксельную полосу в мировые единицы
+   * курсом кадра, вписываем фигуру в остаток и центрируем её там. Гарантия
+   * «не перекрывает панель» становится арифметической, а не подобранной.
+   */
+  const size = useThree((s) => s.size);
+
   const [scale, offsetX, offsetY] = useMemo(() => {
     const [lo, hi] = WIRE.scaleClamp;
-    const s = Math.min(hi, Math.max(lo, viewport.width * WIRE.scaleRatio));
-    // На мобиле сдвигать некуда — там фигура лежит за текстом по центру,
-    // и панели, от которой надо уворачиваться, тоже нет.
-    const x = mode === "quiet" ? 0 : viewport.width * WIRE.offsetXRatio;
-    const y = mode === "quiet" ? 0 : viewport.height * WIRE.offsetYRatio;
-    return [s, x, y];
-  }, [viewport.width, viewport.height, mode]);
+    const byWidth = Math.min(hi, Math.max(lo, viewport.width * WIRE.scaleRatio));
+
+    // На мобиле разводить не с чем: панели нет, фигура лежит за текстом по центру.
+    if (mode === "quiet") return [byWidth, 0, 0];
+
+    const worldPerPx = viewport.height / size.height;
+    const freePx = size.height - WIRE.panelReservedPx - WIRE.figureGapPx * 2;
+    const radius = WIRE.boundingRadius[geometryKind];
+    /**
+     * Потолок по высоте — жёсткий: он и есть обещание «фигура не под панелью».
+     *
+     * Считаем через угловой радиус, а не пропорцией: камера перспективная,
+     * ближняя к ней сторона фигуры проецируется крупнее дальней. Линейная
+     * прикидка ошибалась на 1.5 % и роняла низ фигуры на 3 px за край экрана.
+     * Силуэт сферы радиуса R с расстояния d виден под углом asin(R/d), отсюда
+     * обратный ход: из доли кадра → тангенс → синус → радиус.
+     */
+    const ndcHalf = freePx / size.height;
+    const angular = Math.atan(ndcHalf * Math.tan((CAMERA_FOV / 2) * (Math.PI / 180)));
+    const byHeight = (CAMERA_Z * Math.sin(angular)) / radius;
+
+    const centerPx = WIRE.panelReservedPx + WIRE.figureGapPx + freePx / 2;
+    return [
+      Math.min(byWidth, byHeight),
+      viewport.width * WIRE.offsetXRatio,
+      // Мировая ось Y смотрит вверх, экранная — вниз, отсюда знак.
+      (size.height / 2 - centerPx) * worldPerPx,
+    ];
+  }, [viewport.width, viewport.height, size.height, mode, geometryKind]);
 
   // Объект uniform'ов создаётся один раз; дальше мутируем `.value`, иначе
   // ShaderMaterial перекомпилируется на каждое движение ползунка.
@@ -163,10 +210,13 @@ const LEVA_THEME = {
     vivid1: PALETTE.accent,
   },
   fonts: { mono: "'JetBrains Mono', ui-monospace, monospace", sans: "'JetBrains Mono', monospace" },
-  fontSizes: { root: "10px" },
-  sizes: { rootWidth: "100%", controlWidth: "104px", rowHeight: "22px", scrubberWidth: "8px" },
+  // Компактнее стока: панель делит первый экран с фигурой, и каждый её пиксель
+  // по высоте — пиксель, отобранный у фигуры (см. PANEL_RESERVED_PX).
+  // Замер после сжатия: развёрнутая панель 215 → 176 px по высоте, 236 → 204 по ширине.
+  fontSizes: { root: "9px" },
+  sizes: { rootWidth: "100%", controlWidth: "88px", rowHeight: "18px", scrubberWidth: "7px" },
   radii: { xs: "0px", sm: "0px", lg: "0px" },
-  space: { sm: "6px", md: "8px", rowGap: "5px", colGap: "6px" },
+  space: { sm: "5px", md: "6px", rowGap: "3px", colGap: "5px" },
   borderWidths: { root: "1px", input: "1px", focus: "1px" },
 };
 
@@ -266,7 +316,7 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
           frameloop={mode === "frozen" ? "demand" : "never"}
           dpr={[1, dprCap]}
           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-          camera={{ position: [0, 0, 2.75], fov: 45 }}
+          camera={{ position: [0, 0, CAMERA_Z], fov: CAMERA_FOV }}
         >
           <WireMesh params={params} mode={mode} />
         </Canvas>
@@ -294,7 +344,7 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
         // коротком 1024×600 запас был 1 px, после подъёма стал 33; на 1280×720
         // 33 → 65. Ниже шапки при этом остаётся 24 px даже в непрокрученном
         // состоянии (`py-6` у nav).
-        <div className="pointer-events-auto absolute right-5 top-20 z-20 w-[236px] md:right-10 md:top-24">
+        <div className="pointer-events-auto absolute right-5 top-20 z-20 w-[204px] md:right-10 md:top-24">
           <button
             type="button"
             onClick={() => setPanelOpen((open) => !open)}
@@ -309,7 +359,7 @@ export default function WireframeHeroCanvas({ hostRef, mode, showPanel }: Props)
           </button>
 
           {panelOpen ? (
-            <div id={panelId} className="mt-1.5 border border-hairline bg-bg/95 p-2.5">
+            <div id={panelId} className="mt-1.5 border border-hairline bg-bg/95 p-2">
               <Leva fill titleBar={false} theme={LEVA_THEME} />
               <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-textMuted">
                 {heroWireframe.panelNote}
