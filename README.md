@@ -113,18 +113,21 @@ strings — **no glslify, no Babel** in the pipeline.
 
 | visitor | mode | scene | panel | dash animation | rotation |
 |---|---|---|---|---|---|
-| desktop ≥ 1024 px | `full` | yes | yes, **collapsed** | yes | yes |
-| 768–1023 px | `full` | **no** | no | — | — |
+| desktop ≥ 1184 px | `full` | yes | yes, **collapsed** | yes | yes |
+| 768–1183 px | `full` | **no** | no | — | — |
 | width < 768 px | `quiet` | yes | no | no | slow |
 | `prefers-reduced-motion` | `frozen` | yes | no | no | **no**, single frame |
 
-The offer sits on the left, the figure on the right. That layout rests on three
-coupled values — `WIRE.offsetXRatio` (sign), the side `SCENE_MASK` fades out, and
-the `max-w-[52rem]` text column the mask's `rem` stops are anchored to. Change one
-without the others and the copy lands on top of the wireframe; neither the type
-checker nor the browser will say a word. Between 768 and 1023 px the column takes
-the full content width, so the scene is not mounted there at all — which also
-keeps the 294 kB lazy chunk off tablets.
+The offer sits on the left, the figure on the right. Neither position is tuned by
+hand any more: the figure is fitted into the band left over between the text column
+and the screen edge, and centred there. One number governs the left bound —
+`WIRE.textSafeRem`, which both the mask and the mesh math read, so they cannot
+drift apart. Below 1184 px that band collapses (80 px at 1024), so the scene is not
+mounted at all — which also keeps the 294 kB lazy chunk off tablets.
+
+⚠️ The text column (`max-w-[52rem]`) takes 68 % of the viewport at 1280 px, which
+caps the figure at ~376 px there. Widening the figure or moving it further left
+means narrowing that column — nothing else.
 
 Measurements, the three ported-shader deviations and six open questions for the
 owner: [docs/REPORT-hero-wireframe.md](docs/REPORT-hero-wireframe.md).
