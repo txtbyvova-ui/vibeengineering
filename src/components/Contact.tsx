@@ -26,7 +26,13 @@ export default function Contact() {
         ))}
       </motion.h2>
 
-      <p className="mt-8 max-w-2xl text-textMuted md:text-lg">{contact.body}</p>
+      {/* Главный закрывающий текст страницы, а не сноска: кегль поднят
+          на две ступени распоряжением владельца 2026-08-13. Цвет — `textMain`,
+          потому что на 24 px приглушённый `textMuted` читался как служебная
+          подпись под заголовком. */}
+      <p className="mt-8 max-w-3xl text-xl leading-relaxed text-textMain md:text-2xl">
+        {contact.body}
+      </p>
 
       <a
         href={contact.cta.href}
